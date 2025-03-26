@@ -9,7 +9,6 @@ import { Link } from 'react-router-dom';
 class Home extends React.Component {
   constructor(props) {
     super(props);
-    this.handleSearchClick = this.handleSearchClick.bind(this);
     this.state = {
       isModalOpen: false,
       announcements: [],
@@ -76,11 +75,6 @@ class Home extends React.Component {
     this.fetchAnnouncements().then(() => {
     });
   }
-  
-  handleApplyFilters = () => {
-    this.applyFilters();
-    this.closeModal();
-  };
   
   handleResetFilters = () => {
     this.resetFilters();

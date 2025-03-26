@@ -136,7 +136,8 @@ header {
     justify-content: flex-end;
     flex: 1;
     font-family: var(--font-main-family);
-    line-height: 0
+    line-height: 0;
+    align-items: center;
 }
 
 .auth-btn {
@@ -156,8 +157,32 @@ header {
     cursor: pointer;
 }
 
-.header-icons > a + a {
+.header-icons button {
     margin-left: 10px;
+    font-size: 16px;
+    font-weight: 500;
+    color: #616161;
+    font-family: var(--font-main-family);
+}
+
+.css-1uent87-MuiButtonBase-root-MuiButton-root {
+    text-transform: none !important;
+    font-family: var(--font-main-family) !important;
+}
+
+.MuiButtonBase-root {
+    font-family: var(--font-main-family) !important;
+}
+
+.MuiInputBase-input {
+    font-family: var(--font-main-family) !important;
+}
+
+.user-menu span {
+    margin-left: 20px;
+    font-weight: 500;
+    color: #616161;
+    cursor: pointer;
 }
 
 .icon-fav {
