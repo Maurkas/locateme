@@ -1,0 +1,193 @@
+/* Два столбца */
+
+.filters-header {
+    display: flex;
+    justify-content: space-between;
+    margin: 10px 0;
+    align-items: center;
+}
+
+.filters-footer {
+    display: flex;
+    flex-direction: row-reverse;
+    margin-top: 20px;
+    gap: 20px;
+}
+
+.filters-footer button {
+    background-color: #2196F3;
+    color: white;
+    font-weight: 500;
+    border: none;
+    border-radius: 6px;
+    padding: 5px 5px;
+    transition: 0.5s;
+}
+
+.filters-footer button:last-of-type {
+    color: #2196F3;
+    background-color: initial;
+}
+
+.filters-footer button:first-of-type:hover {
+    background-color: #0074d3;
+}
+
+@media (max-width: 1092px) {
+    .filters-container {
+        flex-direction: column;
+    }
+}
+
+.filters-container {
+    display: flex;
+    gap: 20px; /* Пробел между столбцами */
+    overflow-y: auto;
+}
+
+.filters-container::-webkit-scrollbar {
+    width: 7px;
+    background-color: #f9f9fd;
+}
+
+.filters-container::-webkit-scrollbar-thumb {
+    border-radius: 10px;
+    background-color: #616161;
+}
+
+.filters-container::-webkit-scrollbar-track {
+    -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.2);
+    border-radius: 10px;
+    background-color: #f9f9fd;
+}
+
+.filters-left,
+.filters-right {
+    flex: 1; /* Равная ширина для обоих столбцов */
+}
+
+.filters-left {
+    margin-right: 20px; /* Отступ справа */
+}
+
+.filters-right {
+    margin-left: 20px; /* Отступ слева */
+    margin-right: 20px;
+}
+
+/* Заголовки секций */
+.filters-left h3,
+.filters-right h3 {
+    margin-bottom: 10px;
+    font-size: 18px;
+}
+
+/* Форматирование полей */
+label {
+    display: block;
+}
+
+input,
+select {
+    width: 100%;
+    padding: 5px;
+    box-sizing: border-box;
+    border-radius: 6px;
+    border: 1px solid #8f8f8f;
+}
+
+input[type="checkbox"] {
+    width: auto;
+    margin-left: 5px;
+}
+
+/* Затемнение фона */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    color: #3b3b3b;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5); /* Полупрозрачный фон */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000; /* Убедитесь, что окно поверх остальных элементов */
+}
+
+/* Содержимое модального окна */
+/* Содержимое модального окна */
+.modal-content {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    position: relative;
+    width: 80%; /* Адаптивная ширина */
+    max-width: 862px; /* Максимальная ширина */
+    max-height: 80vh; /* Ограничиваем высоту окна до 80% от высоты viewport */
+}
+
+/* Кнопка закрытия */
+.close-btn {
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.5s;
+}
+
+/* Фильтры */
+.filters {
+    margin-top: 20px;
+}
+
+.filter-item input {
+    font-size: 14px;
+}
+
+.filter__label {
+    margin-bottom: 10px;
+}
+
+.input-container {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.input__item {
+    position: relative;
+    display: inline-block;
+    cursor: pointer;
+}
+
+.input__item input[type="checkbox"] {
+    display: none; /* Скрываем оригинальный чекбокс */
+}
+
+.input__item span {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    padding: 6px 10px;
+    border: 2px solid #ccc;
+    border-radius: 3px;
+    background-color: #fff;
+    color: #333;
+    font-size: 14px;
+    transition: border-color 0.3s ease;
+}
+
+.input__item input[type="checkbox"]:checked + span {
+    border-color: #007bff; /* Цвет обводки при нажатии */
+}
+
+.input__item input[type="radio"] {
+    display: none; 
+}
+
+.input__item input[type="radio"]:checked + span {
+    border-color: #007bff; /* Цвет обводки при нажатии */
+}

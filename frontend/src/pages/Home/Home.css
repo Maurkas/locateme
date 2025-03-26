@@ -1,0 +1,197 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat+Alternates:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap');
+
+:root {
+    box-sizing: border-box;
+    --container-gutter: 20em;
+    --font-main-family: 'Montserrat', sans-serif;
+    --header-background: #242526;
+}
+  
+*,
+::before,
+::after {
+box-sizing: inherit;
+}
+
+body {
+    margin: 0 auto;
+    font-family: var(--font-main-family);
+    background-color: #ffffff;
+}
+
+h1 {
+    font-size: 24px;
+    color: #616161;
+}
+
+h4 {
+    font-weight: 600;
+    margin-bottom: 0;
+}
+
+.search-form {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding-top: 50px;
+}
+
+.search-form__buttons {
+    display: flex;
+    -webkit-box-shadow: 0px 1px 10px -3px rgba(34, 60, 80, 0.3);
+    -moz-box-shadow: 0px 1px 10px -3px rgba(34, 60, 80, 0.3);
+    box-shadow: 0px 1px 10px -3px rgba(34, 60, 80, 0.3);
+    margin-top: 20px;
+    border-radius: 6px;
+}
+
+.search-form__search-btn {
+    cursor: pointer;
+    padding: 8px 27px;
+    font-size: 16px;
+    border: 1px solid #f4f4f4;
+    background-color: #2196F3;
+    color: rgb(255, 255, 255);
+    border-radius: 7px;
+    margin-top: 20px;
+    font-weight: 600;
+    transition: 0.5s;
+}
+
+.search-form__search-btn:hover {
+    background-color: #0074d3;
+}
+
+.dropdown-btn {
+    position: relative;
+    line-height: 1.43;
+    font-size: 16px;
+    padding: 12px 45px;
+    border: none;
+    border-right: 1px solid #f4f4f4;
+    background-color: #ffffff;
+    font-weight: 500;
+    color: #616161;
+}
+
+.dropdown-btn::after {
+    display: block;
+    position: absolute;
+    top: 50%;
+    right: 22px;
+    -webkit-transform: translateY(-50%) rotate(45deg);
+    -moz-transform: translateY(-50%) rotate(45deg);
+    -o-transform: translateY(-50%) rotate(45deg);
+    transform: translateY(-50%) rotate(45deg);
+    -webkit-transition: -webkit-transform .3s;
+    transition: -webkit-transform .3s;
+    -o-transition: -o-transform .3s;
+    -moz-transition: transform .3s, -moz-transform .3s;
+    transition: transform .3s;
+    transition: transform .3s, -webkit-transform .3s, -moz-transform .3s, -o-transform .3s;
+    border-right: 2px solid #c9c9c9;
+    border-bottom: 2px solid #c9c9c9;
+    width: 6px;
+    height: 6px;
+    content: "";
+}
+
+.dropdown-btn:first-of-type {
+    border-radius: 6px 0 0 6px;
+}
+
+.dropdown-btn:last-of-type {
+    border-right: none;
+    border-radius: 0 6px 6px 0;
+}
+
+.album {
+    background-color: #fff !important;
+}
+
+.card {
+    min-height: 400px;
+}
+
+footer {
+    margin-top: 40px;
+}
+
+.card-title {
+    color: #000;
+}
+
+/* Стили для выпадающих меню */
+.dropdown-container {
+    position: relative;
+    display: inline-block;
+}
+
+.dropdown-menu {
+    display: block;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 1000;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 10px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    min-width: 200px;
+    margin-top: 5px;
+}
+
+.price-dropdown {
+    min-width: 250px;
+}
+
+.dropdown-menu .input__item {
+    display: block;
+    margin: 5px 0;
+    padding: 5px;
+    cursor: pointer;
+}
+
+.dropdown-menu .input__item:hover {
+    background: #f5f5f5;
+}
+
+.input-container {
+    display: flex;
+    gap: 10px;
+}
+
+.input-container input {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.sort-options {
+    margin-top: 20px;
+    margin-bottom: 30px;
+}
+
+.sort-options span {
+    font-size: 18px;
+    font-weight: 500;
+    color: #616161;
+    line-height: 1.43;
+}
+
+.sort-options select {
+    margin-left: 10px;
+    width: 220px;
+    padding: 7px;
+    font-weight: 500;
+    color: #616161;
+    border: 1px solid #d7d7d7;
+}
+
+.sort-options option {
+    font-weight: 500;
+    color: #616161;
+}
