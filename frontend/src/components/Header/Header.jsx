@@ -76,9 +76,9 @@ export default function Header() {
                     <Link to="/" className='myLogo'>LocateMe</Link>
                 </div>
                 <div className='header-icons'>
-                    <a>
+                    <Link to={'/favourites'}>
                         <FontAwesomeIcon className='icon-fav' icon={faHeart} size="1x" style={{color: "#616161",}} />
-                    </a>
+                    </Link>
                     {user ? (
                         <div className="user-menu">
                             <span>{user.username}</span>

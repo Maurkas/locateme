@@ -32,7 +32,7 @@ const AnnouncementDetail = () => {
   if (!announcement) return <div>Объявление не найдено</div>;
 
   return (
-    <div className="App">
+    <>
       <Header />
       <main className="announcement">
         <div className="announcement__container">
@@ -142,7 +142,7 @@ const AnnouncementDetail = () => {
         </div>
       </main>
       <Footer />
-    </div>
+    </>
   );
 };
 

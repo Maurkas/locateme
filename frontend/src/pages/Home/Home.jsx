@@ -3,10 +3,17 @@ import Header from '../../components/Header/Header';
 import Footer from '../../components/Footer/Footer';
 import Filters from '../../components/Filters/Filters';
 import { AnnouncementsService } from '../../services/api/announcements';
+import { AuthContext } from '../../components/Authorization/AuthContext'
 import './Home.css';
 import { Link } from 'react-router-dom';
+import { NumericFormat } from 'react-number-format';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import {faHeart} from "@fortawesome/free-solid-svg-icons";
+
 
 class Home extends React.Component {
+  static contextType = AuthContext;
+
   constructor(props) {
     super(props);
     this.state = {
@@ -148,8 +155,24 @@ class Home extends React.Component {
   
   getPriceButtonText = () => {
     const { filters } = this.state;
-    if (!filters.priceMin && !filters.priceMax) return 'Цена';
-    return `${filters.priceMin || '0'} - ${filters.priceMax || '∞'} ₽`;
+    
+    // Проверяем и null, и undefined
+    if ((filters.priceMin === null || filters.priceMin === undefined) && 
+        (filters.priceMax === null || filters.priceMax === undefined)) {
+      return 'Цена';
+    }
+  
+    const formatMin = (num) => 
+      num !== null && num !== undefined ? 
+      new Intl.NumberFormat('ru-RU').format(num) + ' ₽' : 
+      '0 ₽';
+  
+    const formatMax = (num) => 
+      num !== null && num !== undefined ? 
+      new Intl.NumberFormat('ru-RU').format(num) + ' ₽' : 
+      '∞ ₽';
+  
+    return `${formatMin(filters.priceMin)} - ${formatMax(filters.priceMax)}`;
   };
 
   filterAnnouncements = (announcements) => {
@@ -448,9 +471,10 @@ class Home extends React.Component {
 
   render() {
     const { isModalOpen, filteredAnnouncements, loading, error, activeDropdown, districts, filters, sortOption } = this.state;
-
+    const { toggleFavorite, isFavorite } = this.context;
+    
     return (
-      <div className="App">
+      <>
         <Header />
         <main className='container-fluid'>
           <div className='search-form'>
@@ -516,18 +540,20 @@ class Home extends React.Component {
                   <div className="dropdown-menu price-dropdown">
                     <div className="filter-item">
                       <div className="input-container">
-                      <input
-                        type="number"
-                        placeholder="От"
-                        value={this.state.filters.priceMin || ""}
-                        onChange={(e) => this.handlePriceChange(e.target.value, this.state.filters.priceMax)}
-                      />
-                      <input
-                        type="number"
-                        placeholder="До"
-                        value={this.state.filters.priceMax || ""}
-                        onChange={(e) => this.handlePriceChange(this.state.filters.priceMin, e.target.value)}
-                      />
+                        <NumericFormat
+                          thousandSeparator=" "
+                          suffix=" ₽"
+                          placeholder="От"
+                          value={this.state.filters.priceMin || ""}
+                          onValueChange={(values) => this.handlePriceChange(values.floatValue, this.state.filters.priceMax)}
+                        />
+                        <NumericFormat
+                          thousandSeparator=" "
+                          suffix=" ₽"
+                          placeholder="До"
+                          value={this.state.filters.priceMax || ""}
+                          onValueChange={(values) => this.handlePriceChange(this.state.filters.priceMin, values.floatValue)}
+                        />
                       </div>
                     </div>
                   </div>
@@ -568,14 +594,28 @@ class Home extends React.Component {
                   {filteredAnnouncements.map(announcement => (
                     <div className="col-md-4" key={announcement.announcement_id}>
                       <div className="card mb-4 box-shadow">
-                        <Link to={`/announcement/${announcement.announcement_id}`}>
-                          <img
-                            className="card-img-top"
-                            src={announcement.photo}
-                            alt={announcement.name}
-                            style={{ height: '225px', width: '100%', objectFit: 'cover' }}
-                          />
-                        </Link>
+                        <div className="card-img-container">
+                          <Link to={`/announcement/${announcement.announcement_id}`}>
+                            <img
+                              className="card-img-top"
+                              src={announcement.photo}
+                              alt={announcement.name}
+                              style={{ height: '225px', width: '100%', objectFit: 'cover' }}
+                            />
+                          </Link>
+                          <button 
+                            className="favorite-btn"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              toggleFavorite(announcement.announcement_id);
+                            }}
+                          >
+                            <FontAwesomeIcon 
+                              icon={faHeart} 
+                              color={isFavorite(announcement.announcement_id) ? 'red' : 'white'}
+                            />
+                          </button>
+                        </div>
                         <div className="card-body">
                           <Link 
                             to={`/announcement/${announcement.announcement_id}`}
@@ -610,7 +650,7 @@ class Home extends React.Component {
           </section>
         </main>
         <Footer />
-      </div>
+      </>
     );
   }
 }

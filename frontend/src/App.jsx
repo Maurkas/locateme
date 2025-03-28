@@ -4,9 +4,9 @@ import { Route, Routes } from 'react-router-dom';
 import ScrollToTop from './components/ScrollToTop';
 import { Helmet, HelmetProvider } from 'react-helmet-async';
 import AnnouncementDetail from './pages/Announcement/AnnouncementDetail';
-import Register from './components/Authorization/Register';
-import Login from './components/Authorization/Login';
+import FavoritesPage from './pages/Favourites/FavoritesPage';
 import { AuthProvider } from './components/Authorization/AuthContext';
+import './index.css'
 
 
 function App() {
@@ -21,8 +21,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/announcement/:id" element={<AnnouncementDetail />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
+          <Route path='/favourites' element={<FavoritesPage/>} />
         </Routes>
       </AuthProvider>
     </HelmetProvider>

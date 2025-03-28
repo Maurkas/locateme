@@ -51,7 +51,9 @@ const AuthModal = ({ open, onClose }) => {
         password: registerData.password
       });
       setError(null);
+      onClose();
     } catch (err) {
+      console.log('Registration error:', err.response?.data); 
       setError(err.response?.data?.email?.[0] || 
               err.response?.data?.username?.[0] || 
               "Ошибка регистрации");
@@ -90,6 +92,7 @@ const AuthModal = ({ open, onClose }) => {
               value={loginData.username}
               onChange={(e) => setLoginData({...loginData, username: e.target.value})}
               sx={{ mt: 2 }}
+              autoComplete="username"
             />
             <TextField
               fullWidth
@@ -99,6 +102,7 @@ const AuthModal = ({ open, onClose }) => {
               value={loginData.password}
               onChange={(e) => setLoginData({...loginData, password: e.target.value})}
               sx={{ mt: 2 }}
+              autoComplete="current-password"
             />
             <Button 
               type="submit" 
@@ -119,6 +123,7 @@ const AuthModal = ({ open, onClose }) => {
               value={registerData.username}
               onChange={(e) => setRegisterData({...registerData, username: e.target.value})}
               sx={{ mt: 2 }}
+              autoComplete="username"
             />
             <TextField
               fullWidth
@@ -128,6 +133,7 @@ const AuthModal = ({ open, onClose }) => {
               value={registerData.email}
               onChange={(e) => setRegisterData({...registerData, email: e.target.value})}
               sx={{ mt: 2 }}
+              autoComplete="email"
             />
             <TextField
               fullWidth
@@ -137,6 +143,7 @@ const AuthModal = ({ open, onClose }) => {
               value={registerData.password}
               onChange={(e) => setRegisterData({...registerData, password: e.target.value})}
               sx={{ mt: 2 }}
+              autoComplete="new-password"
             />
             <Button 
               type="submit" 

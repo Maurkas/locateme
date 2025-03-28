@@ -4,7 +4,7 @@ from .utils import calculate_walk_score
 from amenities.models import Amenities
 
 class Announcements(models.Model):
-    announcement_id = models.CharField(max_length=100, unique=True, default=None) 
+    announcement_id = models.BigIntegerField(unique=True)
     name = models.CharField(('Название'), max_length=255, default="")
     url = models.URLField(('Ссылка'), max_length=500, default=None)
     price = models.IntegerField(('Цена'), default=None)

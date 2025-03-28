@@ -38,11 +38,10 @@ export default function Footer() {
           <MDBRow className='mt-3'>
             <MDBCol md='3' lg='4' xl='3' className='mx-auto mb-4'>
               <h6 className='text-uppercase fw-bold mb-4'>
-                <FontAwesomeIcon icon={faKeyboard} style={{color: "#000000",}} className='me-3' />
                 LocateMe
               </h6>
               <p>
-              Присоединяйтесь к нашему сообществу любителей кастомных клавиатур и откройте для себя новый уровень комфорта, эстетики и производительности с нашими продуктами. 
+              Подбери недвижимости под свои потребности.
               </p>
             </MDBCol>
 

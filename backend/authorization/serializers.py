@@ -1,5 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
+from .models import Favorite
+from announcements.serializers import AnnouncementSerializer
 
 class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
@@ -11,3 +13,12 @@ class UserSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         user = User.objects.create_user(**validated_data)
         return user
+    
+
+class FavoriteSerializer(serializers.ModelSerializer):
+    announcement = AnnouncementSerializer(read_only=True)
+    
+    class Meta:
+        model = Favorite
+        fields = ['id', 'announcement', 'created_at']
+        read_only_fields = ['user']

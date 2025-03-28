@@ -13,6 +13,9 @@ from django.views import View
 from django.shortcuts import get_object_or_404
 from amenities.models import Amenities
 from .utils import haversine
+import logging
+
+logger = logging.getLogger(__name__)
 
 @staff_member_required
 def run_parser_view(request):

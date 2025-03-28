@@ -27,6 +27,7 @@ export const AnnouncementsService = {
         }
     },
 
+
     // async getAllWithWalkScore() {
     //     try {
     //         const response = await fetch(`${API_URL}/announcements/`);

@@ -2,6 +2,7 @@ import React from 'react';
 import './Filters.css'
 import { RadioButton } from './RadioButton';
 import { useState } from 'react';
+import { NumericFormat } from 'react-number-format';
 
 
 const initialSelectedOptions = {
@@ -282,51 +283,61 @@ const Filters = ({ isOpen, onClose, updateFilter, onApply, onReset }) => {
             <div className="filter-item">
               <label className="filter__label">Цена, ₽:</label>
               <div className="input-container">
-              <input
-                type="number"
+              <NumericFormat
+                thousandSeparator=" "
+                suffix=" ₽"
                 placeholder="От"
                 value={priceMin || ""}
-                onChange={(e) => handlePriceChange(e.target.value, priceMax)}
+                onValueChange={(values) => {
+                  handlePriceChange(values.floatValue, priceMax);
+                }}
               />
-              <input
-                type="number"
+              <NumericFormat
+                thousandSeparator=" "
+                suffix=" ₽"
                 placeholder="До"
                 value={priceMax || ""}
-                onChange={(e) => handlePriceChange(priceMin, e.target.value)}
+                onValueChange={(values) => {
+                  handlePriceChange(priceMin, values.floatValue);
+                }}
               />
               </div>
             </div>
             <div className="filter-item">
               <label className="filter__label">Цена за м²:</label>
               <div className="input-container">
-                <input
-                  type="number"
+                <NumericFormat
+                  thousandSeparator=" "
+                  suffix=" ₽"
                   placeholder="От"
                   value={pricePerMeterMin || ""}
-                  onChange={(e) => handlePricePerMeterChange(e.target.value, pricePerMeterMax)}
+                  onValueChange={(values) => handlePricePerMeterChange(values.floatValue, pricePerMeterMax)}
                 />
-                <input
-                  type="number"
+                <NumericFormat
+                  thousandSeparator=" "
+                  suffix=" ₽"
                   placeholder="До"
                   value={pricePerMeterMax || ""}
-                  onChange={(e) => handlePricePerMeterChange(pricePerMeterMin, e.target.value)}
+                  onValueChange={(values) => handlePricePerMeterChange(pricePerMeterMin, values.floatValue)}
                 />
               </div>
             </div>
             <div className="filter-item">
-              <label className="filter__label">Общая площадь:</label>
+              <label className="filter__label">Общая площадь, м²:</label>
               <div className="input-container">
-                  <input
-                    type="number"
+                  <NumericFormat
+                    thousandSeparator=" "
+                    suffix=" м²"
                     placeholder="От"
                     value={totalAreaMin || ""}
-                    onChange={(e) => handleTotalAreaChange(e.target.value, totalAreaMax)}
+                    onValueChange={(values) => handleTotalAreaChange(values.floatValue, totalAreaMax)}
                   />
-                  <input
-                    type="number"
+                  <NumericFormat
+                    thousandSeparator=" "
+                    suffix=" м²"
                     placeholder="До"
                     value={totalAreaMax || ""}
-                    onChange={(e) => handleTotalAreaChange(totalAreaMin, e.target.value)}
+                    onValueChange={(values) => handleTotalAreaChange(totalAreaMin, values.floatValue)}
                   />
               </div>
             </div>
