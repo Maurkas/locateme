@@ -8,9 +8,11 @@ from gym_parser import run_gym_parser
 from gas_station_parser import run_gas_station_parser
 from mosque_religion_parser import run_mosque_religion_parser
 from church_religion_parser import run_church_religion_parser
+from restaurant_parser import run_restaurant_parser
 import threading
 import asyncio
-# Функция для добавления текста в текстовое поле
+
+
 stop_parsing = False
 
 def log(message):
@@ -29,7 +31,7 @@ def stop_parsers():
 def start_parsers():
     """Функция для запуска выбранных парсеров."""
     global stop_parsing
-    stop_parsing = False  # Сброс флага остановки
+    stop_parsing = False
 
     selected_parsers = []
     if pharmacy_var.get():
@@ -46,7 +48,8 @@ def start_parsers():
         selected_parsers.append("Заправки")
     if religious_var.get():
         selected_parsers.append("Религиозные объекты")
-
+    if restaurant_var.get():
+        selected_parsers.append("Рестораны")
     if not selected_parsers:
         log("Не выбрано ни одного парсера.")
         return
@@ -76,6 +79,9 @@ def start_parsers():
             thread2 = threading.Thread(target=run_async_parser, args=(run_church_religion_parser, log, lambda: stop_parsing))
             thread1.start()
             thread2.start()
+        elif parser == "Рестораны":
+            thread = threading.Thread(target=run_async_parser, args=(run_restaurant_parser, log, lambda: stop_parsing))
+            thread.start()
 
 def run_async_parser(parser_func, log, stop_flag):
     """Запускает асинхронный парсер в отдельном потоке."""
@@ -98,6 +104,7 @@ station_var = tk.BooleanVar()
 grocery_store_var = tk.BooleanVar()
 gas_station_var = tk.BooleanVar()
 religious_var = tk.BooleanVar()
+restaurant_var = tk.BooleanVar()
 
 checkbox_frame = tk.Frame(root)
 checkbox_frame.pack(pady=10)
@@ -109,6 +116,7 @@ tk.Checkbutton(checkbox_frame, text="Банки", variable=bank_var).pack(anchor
 tk.Checkbutton(checkbox_frame, text="Тренажерные залы", variable=gym_var).pack(anchor="w")
 tk.Checkbutton(checkbox_frame, text="Заправки", variable=gas_station_var).pack(anchor="w")
 tk.Checkbutton(checkbox_frame, text="Религиозные объекты", variable=religious_var).pack(anchor="w")
+tk.Checkbutton(checkbox_frame, text="Рестораны", variable=restaurant_var).pack(anchor="w")
 
 # Кнопка "Запустить"
 start_button = tk.Button(root, text="Запустить", command=start_parsers)

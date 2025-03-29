@@ -20,6 +20,7 @@ const initialSelectedOptions = {
   pharmacy: "any",
   grocery_store: "any",
   religious: "any",
+  restaurant: "any"
 };
 
 const Filters = ({ isOpen, onClose, updateFilter, onApply, onReset }) => {
@@ -582,6 +583,21 @@ const Filters = ({ isOpen, onClose, updateFilter, onApply, onReset }) => {
                   selectedOption={selectedOptions.grocery_store}
                   setSelectedOption={handleOptionChange("grocery_store")}
                   groupName="grocery_store"
+                />
+              ))}
+              </div>
+            </div>
+            <label className="filter__label">Близость ресторанов:</label>
+            <div className="filter-item">
+              <div className="input-container">
+              {options.map((option) => (
+                <RadioButton
+                  key={option.value}
+                  value={option.value}
+                  label={option.label}
+                  selectedOption={selectedOptions.restaurant}
+                  setSelectedOption={handleOptionChange("restaurant")}
+                  groupName="restaurant"
                 />
               ))}
               </div>
