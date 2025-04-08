@@ -1,3 +1,4 @@
+import asyncio
 import configparser
 import re
 import threading
@@ -123,9 +124,11 @@ def main(page: ft.Page):
             debug_mode=debug_mode.value,
             need_more_info=need_more_info.value,
         )
-        #parser.url = url_input.value.split()
+        
+        def run_async_task():
+            asyncio.run(parser.parse())
 
-        parsing_thread = threading.Thread(target=parser.parse)
+        parsing_thread = threading.Thread(target=run_async_task)
         parsing_thread.start()
         parsing_thread.join()
         start_btn.disabled = False
