@@ -1,0 +1,32 @@
+################################
+### Django Core Dependencies ###
+################################
+Django==5.2.*
+djangorestframework==3.16.*
+djangorestframework-simplejwt==5.5.*
+django-cors-headers==4.3.*
+asgiref==3.8.*
+psycopg2-binary==2.9.*  # Для PostgreSQL
+python-dotenv==1.1.*  # Для переменных окружения
+gunicorn==23.0.*
+whitenoise==6.6.0
+
+###############################
+### Web Scraping & Parsing ###
+###############################
+playwright==1.42.*  # Асинхронный скрапинг
+selenium==4.19.*  # Автоматизация браузера
+requests==2.31.*  # HTTP-запросы
+beautifulsoup4==4.12.*  # Парсинг HTML
+httpx==0.27.*  # Асинхронные HTTP-запросы
+
+#############################
+### Utilities & Logging ###
+#############################
+loguru==0.7.*  # Логирование
+pandas==2.2.*  # Для работы с данными (опционально)
+
+######################
+### GUI (Optional) ###
+######################
+flet==0.27.*  # Только если используете GUI

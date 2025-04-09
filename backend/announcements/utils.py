@@ -1,5 +1,4 @@
 import math
-from collections import defaultdict
 
 def haversine(lat1, lon1, lat2, lon2):
     R = 6371  # Радиус Земли в километрах
@@ -92,3 +91,86 @@ def calculate_walk_score(announcement_coordinates, infrastructure_data):
     logistic_score = 100 / (1 + math.exp(-10 * (normalized_score - 0.5)))
     
     return round(logistic_score)
+
+def calculate_personalized_score(
+    announcement_coordinates: tuple[float, float],
+    infrastructure_data: list[dict],
+    user_filters: dict[str, str],
+    verbose: bool = False
+) -> int:
+    ann_lat, ann_lon = announcement_coordinates
+    category_scores = {}
+
+    BASE_WEIGHTS = {
+        "stops": 3, "school": 4, "kindergarten": 3, "pickup_point": 2,
+        "polyclinic": 3, "center": 2, "gym": 2, "mall": 3,
+        "college_and_university": 2, "beauty_salon": 1, "gas_station": 1,
+        "pharmacy": 2, "grocery_store": 4, "religious": 1, "restaurant": 2,
+        "bank": 2
+    }
+
+    # Учитываем только выбранные категории (не "any")
+    active_filters = {k: v for k, v in user_filters.items() if v != "any"}
+    
+    if not active_filters:
+        return 50  # Если все фильтры "any" - нейтральная оценка
+
+    max_possible = sum(weight * 2 for weight in BASE_WEIGHTS.values())  # Максимальный теоретический балл
+
+    for obj in infrastructure_data:
+        obj_type = obj.get("type")
+        if obj_type not in active_filters:
+            continue
+
+        try:
+            obj_lat, obj_lon = map(float, obj.get("coordinates", "0,0").split(","))
+            distance = haversine(ann_lat, ann_lon, obj_lat, obj_lon)
+        except (ValueError, AttributeError):
+            continue
+
+        preference = active_filters[obj_type]
+        weight = BASE_WEIGHTS[obj_type]
+
+        # Определяем зону объекта
+        if distance <= DISTANCE_THRESHOLDS['walkable']:
+            zone = 'walkable'
+        elif distance <= DISTANCE_THRESHOLDS['nearby']:
+            zone = 'nearby'
+        else:
+            zone = 'far'
+
+        # Применяем вашу логику оценки
+        if preference == "nearby":
+            if zone == 'walkable':
+                score = weight * 2  # Увеличиваем вклад
+            elif zone == 'nearby':
+                score = weight * 1
+            else:
+                score = -weight * 0.5
+        elif preference == "far":
+            if zone == 'far':
+                score = weight * 1  # Полный балл
+            elif zone == 'nearby':
+                score = weight * 0.5  # Половина балла
+            else:
+                score = 0  # Нет баллов
+
+        # Сохраняем максимальный балл для категории
+        if obj_type not in category_scores or score > category_scores[obj_type]:
+            category_scores[obj_type] = score
+
+    # Суммируем баллы по всем категориям
+    total_score = sum(category_scores.get(category, 0) for category in active_filters)
+
+    # Нормализация к шкале 0-100
+    normalized_score = (total_score / max_possible) * 100
+    personalized_score = max(0, min(100, round(normalized_score)))
+
+    if verbose:
+        print("\n=== Результаты расчета ===")
+        print(f"Активные фильтры: {active_filters}")
+        print(f"Найденные совпадения: {category_scores}")
+        print(f"Сырой балл: {total_score} (максимум: {max_possible})")
+        print(f"Нормализованная оценка: {personalized_score}\n")
+
+    return personalized_score

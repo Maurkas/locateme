@@ -1,14 +1,11 @@
-from django.shortcuts import redirect
 from django.contrib import messages
 from django.urls import reverse
-import flet as ft
 from django.http import HttpResponseRedirect, JsonResponse
 from django.contrib.admin.views.decorators import staff_member_required
 import subprocess
 from .serializers import AnnouncementSerializer
 from rest_framework import generics
 from .models import Announcements
-from django.views.generic import DetailView
 from django.views import View
 from django.shortcuts import get_object_or_404
 from amenities.models import Amenities
@@ -55,6 +52,13 @@ class AnnouncementDetailView(View):
                         "coordinates": obj.coordinates,
                         "distance": round(distance, 2),
                     })
+                    
+            user_filters = {
+                key.split('amenities_')[1]: value
+                for key, value in request.GET.items()
+                if key.startswith('amenities_') and 
+                   value in ["any", "nearby", "far", "close"]
+            }
 
             data = {
                 'id': announcement.id,
@@ -87,6 +91,7 @@ class AnnouncementDetailView(View):
                     'parking': announcement.building.parking if announcement.building else None,
                 } if announcement.building else None,
                 'walk_score': announcement.walk_score,
+                'personal_score': announcement.calculate_personal_score(user_filters),
                 'nearby_amenities': nearby_amenities,  # Добавляем ближайшие удобства
             }
             

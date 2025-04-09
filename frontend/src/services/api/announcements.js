@@ -14,6 +14,22 @@ export const AnnouncementsService = {
         }
     },
 
+    async getWithFilters(filters = {}) {
+        const query = new URLSearchParams();
+        
+        Object.entries(filters).forEach(([key, value]) => {
+          if (value !== undefined && value !== null) {
+            query.append(key, value);
+          }
+        });
+    
+        const url = `${API_URL}/announcements/?${query.toString()}`;
+        const response = await fetch(url);
+        
+        if (!response.ok) throw new Error('Network response was not ok');
+        return await response.json();
+    },
+
     async getById(id) {
         try {
             const response = await fetch(`${API_URL}/announcements/${id}/`);

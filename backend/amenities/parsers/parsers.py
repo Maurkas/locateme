@@ -90,7 +90,7 @@ def run_async_parser(parser_func, log, stop_flag):
 # Создание главного окна
 root = tk.Tk()
 root.title("Приложение для запуска парсеров")
-root.geometry("600x400")
+root.geometry("600x600")
 
 # Надпись "Парсеры"
 label = tk.Label(root, text="Парсеры", font=("Arial", 14, "bold"))

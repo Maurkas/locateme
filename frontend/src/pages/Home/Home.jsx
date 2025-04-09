@@ -65,6 +65,8 @@ class Home extends React.Component {
         pharmacy: "any",
         grocery_store: "any",
         religious: "any",
+        restaurant: "any",
+        bank: "any"
       },
       activeDropdown: null, // Текущее открытое выпадающее меню
       districts: ['Кировский', 'Ленинский', 'Советский', 'Трусовский']
@@ -79,13 +81,32 @@ class Home extends React.Component {
   };
 
   componentDidMount() {
+    this.loadFiltersFromStorage();
     this.fetchAnnouncements().then(() => {
     });
   }
+
+  loadFiltersFromStorage = () => {
+    const savedFilters = localStorage.getItem('announcementFilters');
+    if (savedFilters) {
+      try {
+        const parsedFilters = JSON.parse(savedFilters);
+        this.setState({ 
+          filters: parsedFilters 
+        }, () => {
+          // После загрузки фильтров применяем их
+          this.applyFilters();
+        });
+      } catch (error) {
+        console.error('Ошибка при загрузке фильтров:', error);
+        // Если ошибка парсинга, используем фильтры по умолчанию
+        this.resetFilters();
+      }
+    }
+  };
   
   handleResetFilters = () => {
     this.resetFilters();
-    this.syncFiltersToDropdowns(); // Синхронизация после сброса
   };
 
   handleSearchClick = () => {
@@ -338,7 +359,7 @@ class Home extends React.Component {
     }));
   };
 
-  resetFilters = () => {
+  resetFilters = (isFullReset = false) => {
     this.setState(
       {
         filters: {
@@ -383,9 +404,15 @@ class Home extends React.Component {
           pharmacy: "any",
           grocery_store: "any",
           religious: "any",
-        },
+          restaurant: "any",
+          bank: "any"
+        },                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
       },
       () => {
+        // Для полного сброса очищаем localStorage
+        if (isFullReset) {
+          localStorage.removeItem('announcementFilters');
+        }
         this.applyFilters();
       }
     );
@@ -436,20 +463,71 @@ class Home extends React.Component {
     });
   };
 
+  hasActiveAmenityFilters = () => {
+    const { filters } = this.state;
+    const amenityKeys = [
+      "stops", "school", "kindergarten", "pickup_point", 
+      "polyclinic", "center", "gym", "mall", "college_and_university",
+      "beauty_salon", "gas_station", "pharmacy", "grocery_store",
+      "religious", "restaurant", "bank"
+    ];
+  
+    return amenityKeys.some(key => filters[key] !== "any");
+  };
+
   // Новый метод для применения фильтров
-  handleApplyFilters = () => {
-    this.applyFilters();
-    this.closeModal();
+  handleApplyFilters = (amenitiesFilters = {}) => {
+    this.setState(prevState => {
+      const newFilters = {
+        ...prevState.filters,
+        ...amenitiesFilters
+      };
+      
+      // Сохраняем в localStorage только если это не сброс
+      localStorage.setItem('announcementFilters', JSON.stringify(newFilters));
+      
+      return { filters: newFilters };
+    }, () => {
+      this.fetchAnnouncements();
+      // this.applyFilters();
+      this.closeModal();
+    });
   };
 
   fetchAnnouncements = async () => {
     try {
       this.setState({ loading: true });
-      const data = await AnnouncementsService.getAll();
-      this.setState({ 
+      
+      // Формируем параметры только для внешних факторов
+      const amenitiesParams = {};
+      const amenityKeys = ["stops",
+        "school",
+        "kindergarten",
+        "pickup_point",
+        "polyclinic",
+        "center",
+        "gym",
+        "mall",
+        "college_and_university",
+        "beauty_salon",
+        "gas_station",
+        "pharmacy",
+        "grocery_store",
+        "religious",
+        "restaurant",
+        "bank"];
+      
+      amenityKeys.forEach(key => {
+        amenitiesParams[`amenities_${key}`] = this.state.filters[key];
+      });
+      console.log("Отправляемые параметры фильтров:", amenitiesParams);
+      const data = await AnnouncementsService.getWithFilters(amenitiesParams);
+      
+      this.setState({
         announcements: data,
-        filteredAnnouncements: this.sortAnnouncements(data, this.state.sortOption), // Сортируем при загрузке
-        loading: false 
+        loading: false
+      }, () => {
+        this.applyFilters(); // Применяем все фильтры после загрузки новых данных
       });
     } catch (error) {
       this.setState({ 
@@ -638,7 +716,10 @@ class Home extends React.Component {
                           </p>
                           <div className="walk-score">
                             <span>Оценка: </span>
-                            <strong>{announcement.walk_score || 0}</strong>
+                            <strong>{announcement.walk_score || 0}</strong><br />
+                            {this.hasActiveAmenityFilters() && (
+                              <strong>{announcement.personal_score || ''}</strong>
+                            )}
                           </div>
                         </div>
                       </div>

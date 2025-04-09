@@ -47,7 +47,8 @@ const FavoritesPage = () => {
                     price: item.price,
                     url: item.url || '#',
                     image: item.photo || DEFAULT_IMAGE_URL,
-                    date: item.created_at ? new Date(item.created_at) : new Date()
+                    date: item.created_at ? new Date(item.created_at) : new Date(),
+                    walk_score: item.walk_score,
                 })));
                 
             } catch (err) {
@@ -157,6 +158,11 @@ const FavoritesPage = () => {
                           suffix={' ₽'}
                         />
                       </p>
+                      <div className="walk-score">
+                        <span>Оценка: </span>
+                        <strong>{item.walk_score || 0}</strong><br />
+                        
+                      </div>
                       <div className="announcement-actions">
                         <a
                           href={item.url}

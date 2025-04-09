@@ -97,10 +97,6 @@ const AnnouncementDetail = () => {
                   <span className="info-block__label">Ремонт</span>
                   <span className="info-block__value">{announcement.repair}</span>
                 </div>
-                <div className="info-block__item">
-                  <span className="info-block__label">Мебель</span>
-                  <span className="info-block__value">{announcement.furniture}</span>
-                </div>
               </div>
             </div>
 

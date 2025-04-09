@@ -1,6 +1,6 @@
 from django.db import models
 from buildings.models import Buildings
-from .utils import calculate_walk_score
+from .utils import calculate_walk_score, calculate_personalized_score
 from amenities.models import Amenities
 
 class Announcements(models.Model):
@@ -50,6 +50,34 @@ class Announcements(models.Model):
     @property
     def walk_score(self):
         return self.calculate_walk_score()
+    
+    def calculate_personal_score(self, user_filters=None, verbose=False):  # Добавлен параметр verbose
+        """
+        Рассчитывает персонализированную оценку для текущего объявления.
+        """
+        if not user_filters:
+            return None
+            
+        try:
+            lat, lon = map(float, self.coordinates.split(","))
+        except (ValueError, AttributeError):
+            return None
+
+        infrastructure_data = [
+            {"type": obj.type, "coordinates": obj.coordinates}
+            for obj in Amenities.objects.all()
+        ]
+
+        return calculate_personalized_score(
+            announcement_coordinates=(lat, lon),
+            infrastructure_data=infrastructure_data,
+            user_filters=user_filters,
+            verbose=verbose  # Передаём параметр явно
+        )
+
+    @property
+    def personal_score(self):
+        return None
 
     def __str__(self):
         return self.name if self.name else "Без названия"

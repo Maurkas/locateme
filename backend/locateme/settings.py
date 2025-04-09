@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -47,6 +48,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.security.SecurityMiddleware',
@@ -119,15 +121,15 @@ WSGI_APPLICATION = 'locateme.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',  # Драйвер для PostgreSQL
-        'NAME': 'real_estate',                   # Название вашей базы данных
-        'USER': 'postgres',                # Имя пользователя PostgreSQL
-        'PASSWORD': 'maur',                      # Пароль пользователя
-        'HOST': 'localhost',                     
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'real_estate',
+        'USER': 'postgres',
+        'PASSWORD': 'maur',
+        'HOST': 'db', 
         'PORT': '5432',
-        'OPTIONS': { 
-            'options': '-c client_encoding=UTF8',
-        },                           
+    },
+    'OPTIONS': {
+        'client_encoding': 'UTF8', 
     }
 }
 
@@ -166,7 +168,10 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+STATICFILES_STORAGE= 'whitenoise.storage.CompressedManifestStaticFilesStorage' 
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field

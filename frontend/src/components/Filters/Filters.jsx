@@ -20,7 +20,8 @@ const initialSelectedOptions = {
   pharmacy: "any",
   grocery_store: "any",
   religious: "any",
-  restaurant: "any"
+  restaurant: "any",
+  bank: "any"
 };
 
 const Filters = ({ isOpen, onClose, updateFilter, onApply, onReset }) => {
@@ -112,12 +113,12 @@ const Filters = ({ isOpen, onClose, updateFilter, onApply, onReset }) => {
 
   const handleNotFirstFloorChange = (e) => {
     setNotFirstFloor(e.target.checked);
-    updateFilter("notFirstFloor", e.target.checked); // Передача значения в родительский компонент
+    updateFilter("notFirstFloor", e.target.checked);
   };
   
   const handleNotLastFloorChange = (e) => {
     setNotLastFloor(e.target.checked);
-    updateFilter("notLastFloor", e.target.checked); // Передача значения в родительский компонент
+    updateFilter("notLastFloor", e.target.checked);
   };
 
   const handleBathroomChange = (type) => {
@@ -233,7 +234,7 @@ const Filters = ({ isOpen, onClose, updateFilter, onApply, onReset }) => {
     setHouseType([]);
     setElevator([]);
     setParking([]);
-    onReset();
+    onReset(true);
   };
 
   if (!isOpen) return null;
@@ -677,6 +678,21 @@ const Filters = ({ isOpen, onClose, updateFilter, onApply, onReset }) => {
               ))}
               </div>
             </div>
+            <label className="filter__label">Близость банкомата:</label>
+            <div className="filter-item">
+              <div className="input-container">
+              {options.map((option) => (
+                <RadioButton
+                  key={option.value}
+                  value={option.value}
+                  label={option.label}
+                  selectedOption={selectedOptions.bank}
+                  setSelectedOption={handleOptionChange("bank")}
+                  groupName="bank"
+                />
+              ))}
+              </div>
+            </div>
             <label className="filter__label">Близость к центру города:</label>
             <div className="filter-item">
               <div className="input-container">
@@ -785,7 +801,7 @@ const Filters = ({ isOpen, onClose, updateFilter, onApply, onReset }) => {
           </div>
         </div>
         <div className="filters-footer">
-          <button onClick={onApply}>Показать</button>
+          <button onClick={() => onApply(selectedOptions)}>Показать</button>
           <button onClick={handleResetFilters}>Сбросить фильтры</button>
         </div>
       </div>

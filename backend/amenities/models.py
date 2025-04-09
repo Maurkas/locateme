@@ -13,6 +13,5 @@ class Amenities(models.Model):
     class Meta:
         verbose_name_plural = "Удобства"
         verbose_name = "Amenities"
-        managed = False
         db_table = 'amenities'
         unique_together = (('title', 'address'),)
