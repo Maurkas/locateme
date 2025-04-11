@@ -13,8 +13,13 @@ services:
     volumes:
       - static_volume:/app/staticfiles
     environment:
-      - DEBUG=0
-      - DATABASE_URL=postgres://postgres:maur@db:5432/real_estate
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+    env_file:
+      - .env.docker
     depends_on:
       db:
         condition: service_healthy

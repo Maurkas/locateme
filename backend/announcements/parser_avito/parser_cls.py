@@ -3,11 +3,13 @@ import threading
 import re
 from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
 from announcements.models import Announcements
+from django.utils import timezone
 from buildings.models import Buildings
 from custom_exception import StopEventException
 from playwright.async_api import async_playwright
 from loguru import logger
 from locator import LocatorAvito
+from dateutil import parser
 
 class AvitoParse:
     DEFAULT_PHOTO = "https://via.placeholder.com/150"
@@ -124,7 +126,6 @@ class AvitoParse:
         try:
             name_element = await item.query_selector(LocatorAvito.NAME[1])
             name = await name_element.inner_text() if name_element else ""
-            
             link_element = await item.query_selector("a")
             url = await link_element.get_attribute("href") if link_element else ""
             if url:
@@ -173,6 +174,16 @@ class AvitoParse:
                 except Exception as e:
                     data["photo"] = self.DEFAULT_PHOTO
                     logger.error(f"Ошибка при получении фото: {e}")
+                  
+                # Парсинг даты публикации  
+                try:
+                    date_public = await new_page.query_selector(LocatorAvito.DATE_PUBLIC[1])
+                    date_string = await date_public.inner_text() if date_public else ""
+                    published_at  = parser.parse(date_string, dayfirst=True, fuzzy=True) if date_string else None
+                    published_at = timezone.make_aware(published_at, timezone.get_current_timezone())
+                    data["published_at"] = published_at 
+                except Exception as e:
+                    logger.error(f"Ошибка получения даты публикации: {e}")
                     
                 # Парсинг адреса и координат
                 if self.geo:
@@ -199,7 +210,7 @@ class AvitoParse:
                 data["address"] = await address_element.inner_text() if address_element else ""
                 
                 district_element = await address_container.query_selector("span.style-item-address-georeferences-item-TZsrp")
-                data["district"] = await district_element.inner_text() if district_element else ""
+                data["district"] = (await district_element.inner_text()).replace("р-н ", "") if district_element else ""
                 
             map_container = await page.query_selector("div.style-item-map-wrapper-ElFsX")
             if map_container:
@@ -337,6 +348,7 @@ class AvitoParse:
                 defaults={
                     "name": data.get("name"),
                     "url": data.get("url"),
+                    "published_at": data.get("published_at"),
                     "price": data.get("price"),
                     "pricePerMeter": data.get("pricePerMeter"),
                     "photo": data.get("photo"),

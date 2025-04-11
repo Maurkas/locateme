@@ -22,7 +22,11 @@ class Home extends React.Component {
       filteredAnnouncements: [],
       loading: false,
       error: null,
-      sortOption: 'date',
+      sortOption: 'default',
+      currentPage: 1,
+      itemsPerPage: 21,
+      totalItems: 0,
+      totalPages: 1,
       filters: {
         districts: [],
         rooms: [],
@@ -71,6 +75,41 @@ class Home extends React.Component {
       activeDropdown: null, // Текущее открытое выпадающее меню
       districts: ['Кировский', 'Ленинский', 'Советский', 'Трусовский']
     };
+    this.handleFavoriteClick = this.handleFavoriteClick.bind(this);
+  }
+
+  handleFavoriteClick(e, announcement) {
+    e.preventDefault();
+    const { isFavorite, token } = this.context;
+    
+    if (token) {
+      // Для авторизованных пользователей - обычное поведение
+      this.context.toggleFavorite(announcement.announcement_id);
+    } else {
+      // Для гостей - сохраняем полную информацию в localStorage
+      const guestFavorites = JSON.parse(localStorage.getItem('guest_favorites')) || [];
+      const isAlreadyFavorite = guestFavorites.some(fav => fav.id === announcement.announcement_id);
+      
+      if (isAlreadyFavorite) {
+        // Удаляем из избранного
+        const updatedFavorites = guestFavorites.filter(fav => fav.id !== announcement.announcement_id);
+        localStorage.setItem('guest_favorites', JSON.stringify(updatedFavorites));
+      } else {
+        // Добавляем в избранное
+        const newFavorite = {
+          id: announcement.announcement_id,
+          title: announcement.name,
+          price: announcement.price,
+          url: announcement.url || '#',
+          image: announcement.photo || DEFAULT_IMAGE_URL,
+          date: announcement.published_at ? new Date(announcement.published_at) : new Date(),
+          walk_score: announcement.walk_score,
+        };
+        
+        localStorage.setItem('guest_favorites', JSON.stringify([...guestFavorites, newFavorite]));
+      }
+      this.forceUpdate();
+    }
   }
 
   // Переключение выпадающего меню
@@ -82,8 +121,7 @@ class Home extends React.Component {
 
   componentDidMount() {
     this.loadFiltersFromStorage();
-    this.fetchAnnouncements().then(() => {
-    });
+    //this.fetchAnnouncements();
   }
 
   loadFiltersFromStorage = () => {
@@ -91,17 +129,12 @@ class Home extends React.Component {
     if (savedFilters) {
       try {
         const parsedFilters = JSON.parse(savedFilters);
-        this.setState({ 
-          filters: parsedFilters 
-        }, () => {
-          // После загрузки фильтров применяем их
-          this.applyFilters();
-        });
-      } catch (error) {
-        console.error('Ошибка при загрузке фильтров:', error);
-        // Если ошибка парсинга, используем фильтры по умолчанию
+        this.setState({ filters: parsedFilters }, this.fetchAnnouncements);
+      } catch {
         this.resetFilters();
       }
+    } else {
+      this.fetchAnnouncements(); // Только если нет фильтров в localStorage
     }
   };
   
@@ -110,7 +143,10 @@ class Home extends React.Component {
   };
 
   handleSearchClick = () => {
-    this.applyFilters();
+    this.setState({ currentPage: 1 }, () => {
+      this.fetchAnnouncements();
+      this.scrollToTop();
+    });
   };
 
   // Обработчик выбора районов
@@ -196,161 +232,8 @@ class Home extends React.Component {
     return `${formatMin(filters.priceMin)} - ${formatMax(filters.priceMax)}`;
   };
 
-  filterAnnouncements = (announcements) => {
-    const { filters } = this.state;
-
-    return announcements.filter((announcement) => {
-
-      if (filters.districts.length > 0 && !filters.districts.includes(announcement.building?.district)) {
-        return false;
-      }
-
-      // Фильтрация по количеству комнат
-      if (filters.rooms.length > 0 && !filters.rooms.includes(announcement.number_of_rooms)) {
-        return false;
-      }
-
-      // Фильтрация по цене
-      if (filters.priceMin !== null && announcement.price < filters.priceMin) {
-        return false;
-      }
-      if (filters.priceMax !== null && announcement.price > filters.priceMax) {
-        return false;
-      }
-
-      // Фильтрация по цене за м²
-      if (filters.pricePerMeterMin !== null && (announcement.pricePerMeter) < filters.pricePerMeterMin) {
-        return false;
-      }
-      if (filters.pricePerMeterMax !== null && (announcement.pricePerMeter) > filters.pricePerMeterMax) {
-        return false;
-      }
-
-      // Фильтрация по площади
-      if (filters.totalAreaMin !== null && announcement.total_area < filters.totalAreaMin) {
-        return false;
-      }
-      if (filters.totalAreaMax !== null && announcement.total_area > filters.totalAreaMax) {
-        return false;
-      }
-
-      // Фильтрация по этажу
-      if (filters.floorMin !== null && announcement.floor < filters.floorMin) {
-        return false;
-      }
-      if (filters.floorMax !== null && announcement.floor > filters.floorMax) {
-        return false;
-      }
-      if (filters.notFirstFloor && announcement.floor === 1) {
-        return false;
-      }
-      if (filters.notLastFloor && announcement.floor === announcement.building?.number_of_floors) {
-        return false;
-      }
-
-      // Фильтрация по типу санузла
-      if (
-        filters.bathroomType.length > 0 &&
-        !filters.bathroomType.includes(announcement.bathroom_type)
-      ) {
-        return false;
-      }
-
-      // Фильтрация по площади кухни
-      if (filters.kitchenAreaMin !== null && announcement.kitchen_area < filters.kitchenAreaMin) {
-        return false;
-      }
-      if (filters.kitchenAreaMax !== null && announcement.kitchen_area > filters.kitchenAreaMax) {
-        return false;
-      }
-
-      // Фильтрация по высоте потолков
-      if (filters.ceilingHeightMin !== null && announcement.ceiling_height < filters.ceilingHeightMin) {
-        return false;
-      }
-      if (filters.ceilingHeightMax !== null && announcement.ceiling_height > filters.ceilingHeightMax) {
-        return false;
-      }
-
-      // Фильтрация по окнам
-      if (
-        filters.windows.length > 0 &&
-        !filters.windows.includes(announcement.windows)
-      ) {
-        return false;
-      }
-
-      // Фильтрация по типу ремонта
-      if (
-        filters.repairType.length > 0 &&
-        !filters.repairType.includes(announcement.repair)
-      ) {
-        return false;
-      }
-
-      // Фильтрация по балкону/лоджии
-      if (
-        filters.balcony.length > 0 &&
-        !filters.balcony.some(type => announcement.balcony_or_loggia?.includes(type))
-      ) {
-        return false;
-      }
-
-      // Фильтрация по году постройки
-      if (filters.yearOfConstructionMin !== null && announcement.building?.year_of_construction < filters.yearOfConstructionMin) {
-        return false;
-      }
-      if (filters.yearOfConstructionMax !== null && announcement.building?.year_of_construction > filters.yearOfConstructionMax) {
-        return false;
-      }
-
-      // Фильтрация по количеству этажей в доме
-      if (filters.numberOfFloorMin !== null && announcement.building?.number_of_floors < filters.numberOfFloorMin) {
-        return false;
-      }
-      if (filters.numberOfFloorMax !== null && announcement.building?.number_of_floors > filters.numberOfFloorMax) {
-        return false;
-      }
-
-      // Фильтрация по типу дома
-      if (
-        filters.houseType.length > 0 &&
-        !filters.houseType.includes(announcement.building?.house_type)
-      ) {
-        return false;
-      }
-
-      // Фильтрация по лифту
-      if (
-        filters.elevator.length > 0 &&
-        !filters.elevator.some(type => announcement.elevator_type?.includes(type))
-      ) {
-        return false;
-      }
-
-      // Фильтрация по парковке
-      if (
-        filters.parking.length > 0 &&
-        !filters.parking.some(type => announcement.parking?.includes(type))
-      ) {
-        return false;
-      }
-
-      // Фильтрация по внешним факторам (если есть соответствующие данные в announcement)
-      // Например:
-      if (filters.stops === "close" && announcement.stops_distance > 500) {
-        return false;
-      }
-      if (filters.stops === "far" && announcement.stops_distance <= 500) {
-        return false;
-      }
-
-      return true;
-    });
-  };
 
   updateFilter = (filterName, value) => {
-    // Убираем вызов applyFilters здесь
     this.setState((prevState) => ({
       filters: {
         ...prevState.filters,
@@ -413,53 +296,17 @@ class Home extends React.Component {
         if (isFullReset) {
           localStorage.removeItem('announcementFilters');
         }
-        this.applyFilters();
+        //this.fetchAnnouncements();
       }
     );
   };
 
-  sortAnnouncements = (announcements, sortOption) => {
-    const sorted = [...announcements];
-    
-    switch(sortOption) {
-      case 'date':
-        // Сортировка по дате (новые сначала)
-        sorted.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-        break;
-      case 'price_asc':
-        // Сортировка по цене (дешевые сначала)
-        sorted.sort((a, b) => a.price - b.price);
-        break;
-      case 'price_desc':
-        // Сортировка по цене (дорогие сначала)
-        sorted.sort((a, b) => b.price - a.price);
-        break;
-      case 'score':
-        // Сортировка по оценке (высокие сначала)
-        sorted.sort((a, b) => (b.walk_score || 0) - (a.walk_score || 0));
-        break;
-      default:
-        // По умолчанию сортируем по дате
-        sorted.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-    }
-    
-    return sorted;
-  };
-
-  applyFilters = () => {
-    const { announcements, sortOption } = this.state;
-    let filteredAnnouncements = this.filterAnnouncements(announcements);
-    
-    // Применяем сортировку
-    filteredAnnouncements = this.sortAnnouncements(filteredAnnouncements, sortOption);
-    
-    this.setState({ filteredAnnouncements });
-  };
 
   // Обработчик изменения сортировки
   handleSortChange = (sortOption) => {
-    this.setState({ sortOption }, () => {
-      this.applyFilters(); // Применяем фильтры и сортировку после изменения
+    this.setState({ sortOption, currentPage: 1 }, () => {
+      this.fetchAnnouncements(); 
+      this.scrollToTop();
     });
   };
 
@@ -486,10 +333,10 @@ class Home extends React.Component {
       // Сохраняем в localStorage только если это не сброс
       localStorage.setItem('announcementFilters', JSON.stringify(newFilters));
       
-      return { filters: newFilters };
+      return { filters: newFilters, currentPage: 1 };
     }, () => {
       this.fetchAnnouncements();
-      // this.applyFilters();
+      this.scrollToTop();
       this.closeModal();
     });
   };
@@ -497,37 +344,26 @@ class Home extends React.Component {
   fetchAnnouncements = async () => {
     try {
       this.setState({ loading: true });
+
+      const { currentPage, itemsPerPage, filters, sortOption } = this.state;
+        
+      const params = {
+          page: currentPage,
+          limit: itemsPerPage,
+          sort: sortOption,
+          ...filters
+      };
       
-      // Формируем параметры только для внешних факторов
-      const amenitiesParams = {};
-      const amenityKeys = ["stops",
-        "school",
-        "kindergarten",
-        "pickup_point",
-        "polyclinic",
-        "center",
-        "gym",
-        "mall",
-        "college_and_university",
-        "beauty_salon",
-        "gas_station",
-        "pharmacy",
-        "grocery_store",
-        "religious",
-        "restaurant",
-        "bank"];
-      
-      amenityKeys.forEach(key => {
-        amenitiesParams[`amenities_${key}`] = this.state.filters[key];
-      });
-      console.log("Отправляемые параметры фильтров:", amenitiesParams);
-      const data = await AnnouncementsService.getWithFilters(amenitiesParams);
+      console.log("Отправляемые параметры фильтров:", params);
+      const response = await AnnouncementsService.getWithFilters(params);
+      console.log("Ответ сервера:", response);
       
       this.setState({
-        announcements: data,
+        announcements: response.results || response,
+        filteredAnnouncements: response.results || response,
+        totalItems: response.total_items || response.length || 0,
+        totalPages: response.total_pages || Math.ceil((response.total_items || response.length || 0) / itemsPerPage),
         loading: false
-      }, () => {
-        this.applyFilters(); // Применяем все фильтры после загрузки новых данных
       });
     } catch (error) {
       this.setState({ 
@@ -535,6 +371,21 @@ class Home extends React.Component {
         loading: false 
       });
     }
+  };
+
+  scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth" 
+    });
+  };
+
+  // Обработчик изменения страницы
+  handlePageChange = (pageNumber) => {
+    this.setState({ currentPage: pageNumber }, () => {
+      this.fetchAnnouncements();
+      this.scrollToTop();
+    });
   };
 
   openModal = () => {
@@ -547,9 +398,68 @@ class Home extends React.Component {
     this.setState({ isModalOpen: false });
   };
 
+  renderPagination = () => {
+    const { currentPage, totalPages } = this.state;
+    const pages = [];
+
+    // Всегда показываем первую страницу
+    if (currentPage > 1) {
+      pages.push(
+        <button key="first" onClick={() => this.handlePageChange(1)}>
+          &laquo;
+        </button>
+      );
+    }
+
+    // Показываем предыдущую страницу
+    if (currentPage > 1) {
+      pages.push(
+        <button key="prev" onClick={() => this.handlePageChange(currentPage - 1)}>
+          &lsaquo;
+        </button>
+      );
+    }
+
+    // Показываем страницы вокруг текущей
+    const startPage = Math.max(1, currentPage - 2);
+    const endPage = Math.min(totalPages, currentPage + 2);
+
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(
+        <button
+          key={i}
+          onClick={() => this.handlePageChange(i)}
+          className={currentPage === i ? 'active' : ''}
+        >
+          {i}
+        </button>
+      );
+    }
+
+    // Показываем следующую страницу
+    if (currentPage < totalPages) {
+      pages.push(
+        <button key="next" onClick={() => this.handlePageChange(currentPage + 1)}>
+          &rsaquo;
+        </button>
+      );
+    }
+
+    // Всегда показываем последнюю страницу
+    if (currentPage < totalPages) {
+      pages.push(
+        <button key="last" onClick={() => this.handlePageChange(totalPages)}>
+          &raquo;
+        </button>
+      );
+    }
+
+    return <div className="pagination">{pages}</div>;
+  };
+
   render() {
-    const { isModalOpen, filteredAnnouncements, loading, error, activeDropdown, districts, filters, sortOption } = this.state;
-    const { toggleFavorite, isFavorite } = this.context;
+    const { isModalOpen, filteredAnnouncements, loading, error, activeDropdown, districts, sortOption, currentPage, totalPages } = this.state;
+    const { isFavorite } = this.context;
     
     return (
       <>
@@ -648,10 +558,11 @@ class Home extends React.Component {
               value={sortOption}
               onChange={(e) => this.handleSortChange(e.target.value)}
             >
+              <option value="default">По умолчанию</option>
               <option value="date">По дате (новые)</option>
               <option value="price_asc">Дешевле</option>
               <option value="price_desc">Дороже</option>
-              <option value="score">По оценке</option>
+              {/* <option value="score">По оценке</option> */}
             </select>
           </div>
           <Filters 
@@ -683,14 +594,20 @@ class Home extends React.Component {
                           </Link>
                           <button 
                             className="favorite-btn"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              toggleFavorite(announcement.announcement_id);
-                            }}
+                            onClick={(e) => this.handleFavoriteClick(e, announcement)}
                           >
                             <FontAwesomeIcon 
                               icon={faHeart} 
-                              color={isFavorite(announcement.announcement_id) ? 'red' : 'white'}
+                              color={
+                                this.context.token 
+                                  ? this.context.isFavorite(announcement.announcement_id) 
+                                    ? 'red' 
+                                    : 'white'
+                                  : (JSON.parse(localStorage.getItem('guest_favorites')) || [])
+                                    .some(fav => fav.id === announcement.announcement_id)
+                                    ? 'red'
+                                    : 'white'
+                              }
                             />
                           </button>
                         </div>
@@ -727,6 +644,7 @@ class Home extends React.Component {
                   ))}
                 </div>
               </div>
+              {this.renderPagination()}
             </div>
           </section>
         </main>

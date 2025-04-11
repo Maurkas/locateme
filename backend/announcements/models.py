@@ -7,6 +7,13 @@ class Announcements(models.Model):
     announcement_id = models.BigIntegerField(unique=True)
     name = models.CharField(('Название'), max_length=255, default="")
     url = models.URLField(('Ссылка'), max_length=500, default=None)
+    published_at = models.DateTimeField(
+        'Дата публикации',
+        null=True,
+        blank=True,
+        db_index=True
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
     price = models.IntegerField(('Цена'), default=None)
     pricePerMeter = models.IntegerField(('Цена за кв.м.'), null=True, default=None)
     photo = models.URLField(('Фото'), max_length=1000, default=None)

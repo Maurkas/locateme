@@ -29,6 +29,7 @@ class AnnouncementSerializer(serializers.ModelSerializer):
     class Meta:
         model = Announcements
         fields = "__all__"
+        depth = 1
         
     def get_walk_score(self, obj):
         return obj.walk_score

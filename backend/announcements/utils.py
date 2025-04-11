@@ -1,4 +1,32 @@
-import math
+import math, requests
+from typing import Optional
+
+
+OSRM_SERVER_URL = "http://localhost:5000"
+
+def get_walking_distance_osrm(
+    point1: tuple[float, float], 
+    point2: tuple[float, float],
+    timeout: float = 3.0
+) -> Optional[float]:
+    """
+    Возвращает дистанцию в метрах между точками пешком через OSRM.
+    Если ошибка - возвращает None.
+    """
+    try:
+        #print(f"{point1} | {point2}")
+        lon1, lat1 = point1
+        lon2, lat2 = point2
+        url = f"{OSRM_SERVER_URL}/route/v1/foot/{lon1},{lat1};{lon2},{lat2}?overview=false"
+        
+        response = requests.get(url, timeout=timeout)
+        data = response.json()
+        
+        if response.status_code == 200 and data.get("code") == "Ok":
+            return data["routes"][0]["distance"]  # Дистанция в метрах
+        return None
+    except (requests.RequestException, KeyError, IndexError):
+        return None
 
 def haversine(lat1, lon1, lat2, lon2):
     R = 6371  # Радиус Земли в километрах
@@ -75,7 +103,7 @@ def calculate_walk_score(announcement_coordinates, infrastructure_data):
         elif urban_dist <= DISTANCE_THRESHOLDS['nearby']:
             base_score = 2
         else:
-            continue  # Пропускаем слишком далекие объекты
+            continue
 
         weighted_score = base_score * CATEGORY_WEIGHTS[obj_type]
         
@@ -115,7 +143,7 @@ def calculate_personalized_score(
     if not active_filters:
         return 50  # Если все фильтры "any" - нейтральная оценка
 
-    max_possible = sum(weight * 2 for weight in BASE_WEIGHTS.values())  # Максимальный теоретический балл
+    max_possible = sum(weight * 2 for weight in BASE_WEIGHTS.values())
 
     for obj in infrastructure_data:
         obj_type = obj.get("type")
@@ -124,14 +152,20 @@ def calculate_personalized_score(
 
         try:
             obj_lat, obj_lon = map(float, obj.get("coordinates", "0,0").split(","))
-            distance = haversine(ann_lat, ann_lon, obj_lat, obj_lon)
+            distance = get_walking_distance_osrm(
+                (ann_lon, ann_lat),  # OSRM ожидает (lon, lat)
+                (obj_lon, obj_lat)
+            )
+            if distance is None:
+                continue 
         except (ValueError, AttributeError):
             continue
 
         preference = active_filters[obj_type]
         weight = BASE_WEIGHTS[obj_type]
 
-        # Определяем зону объекта
+        distance = round(distance / 1000, 1)
+        print(distance)
         if distance <= DISTANCE_THRESHOLDS['walkable']:
             zone = 'walkable'
         elif distance <= DISTANCE_THRESHOLDS['nearby']:
@@ -139,30 +173,25 @@ def calculate_personalized_score(
         else:
             zone = 'far'
 
-        # Применяем вашу логику оценки
         if preference == "nearby":
             if zone == 'walkable':
-                score = weight * 2  # Увеличиваем вклад
+                score = weight * 2
             elif zone == 'nearby':
                 score = weight * 1
             else:
                 score = -weight * 0.5
         elif preference == "far":
             if zone == 'far':
-                score = weight * 1  # Полный балл
+                score = weight * 1
             elif zone == 'nearby':
-                score = weight * 0.5  # Половина балла
+                score = weight * 0.5
             else:
-                score = 0  # Нет баллов
+                score = 0
 
-        # Сохраняем максимальный балл для категории
         if obj_type not in category_scores or score > category_scores[obj_type]:
             category_scores[obj_type] = score
 
-    # Суммируем баллы по всем категориям
     total_score = sum(category_scores.get(category, 0) for category in active_filters)
-
-    # Нормализация к шкале 0-100
     normalized_score = (total_score / max_possible) * 100
     personalized_score = max(0, min(100, round(normalized_score)))
 

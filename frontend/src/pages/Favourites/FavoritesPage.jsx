@@ -9,7 +9,6 @@ import Footer from '../../components/Footer/Footer';
 import { AnnouncementsService } from '../../services/api/announcements';
 import { Link } from 'react-router-dom';
 
-
 const DEFAULT_IMAGE_URL = 'https://sun9-21.userapi.com/impg/dLJL9rctl21QsCZjldHnHQxCnH5RjQtieZ0D0g/fkogJXv_IEQ.jpg?size=1200x800&quality=95&sign=588aa60862d21ec0be777a1db320ce6d&type=album';
 
 const FavoritesPage = () => {
@@ -19,51 +18,53 @@ const FavoritesPage = () => {
   const [announcements, setAnnouncements] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [localFavorites, setLocalFavorites] = useState([]);
-
+  const [localFavorites, setLocalFavorites] = useState(() => {
+    const saved = localStorage.getItem('guest_favorites');
+    return saved ? JSON.parse(saved) : [];
+  });
 
   // Загружаем данные объявлений
   useEffect(() => {
     const loadFavorites = async () => {
-        if (activeTab === 'announcements') {
-            setLoading(true);
-            setError(null);
+      if (activeTab === 'announcements') {
+        setLoading(true);
+        setError(null);
+        
+        try {
+          if (token) {
+            // Для авторизованных пользователей
+            const response = await AnnouncementsService.getAll();
+            if (!response?.results) throw new Error('Некорректные данные');
             
-            try {
-                // Получаем все объявления
-                const allAnnouncements = await AnnouncementsService.getAll();
-                
-                // Получаем ID избранных объявлений
-                const favoriteIds = token ? favorites : JSON.parse(localStorage.getItem('guest_favorites')) || [];
-                
-                // Фильтруем объявления
-                const favoriteAnnouncements = allAnnouncements.filter(ann => 
-                    favoriteIds.includes(ann.announcement_id)
-                );
-                
-                setAnnouncements(favoriteAnnouncements.map(item => ({
-                    id: item.announcement_id,
-                    title: item.name,
-                    price: item.price,
-                    url: item.url || '#',
-                    image: item.photo || DEFAULT_IMAGE_URL,
-                    date: item.created_at ? new Date(item.created_at) : new Date(),
-                    walk_score: item.walk_score,
-                })));
-                
-            } catch (err) {
-                console.error('Ошибка загрузки:', err);
-                setError('Не удалось загрузить избранное');
-                setAnnouncements([]);
-            } finally {
-                setLoading(false);
-            }
+            const favoriteAnnouncements = response.results.filter(ann => 
+              favorites.includes(ann.announcement_id)
+            );
+            
+            setAnnouncements(favoriteAnnouncements.map(ann => ({
+              id: ann.announcement_id,
+              title: ann.name,
+              price: ann.price,
+              url: ann.url || '#',
+              image: ann.photo || DEFAULT_IMAGE_URL,
+              date: ann.created_at ? new Date(ann.created_at) : new Date(),
+              walk_score: ann.walk_score,
+            })));
+          } else {
+            // Для гостей - берем данные из localStorage
+            setAnnouncements(localFavorites);
+          }
+        } catch (err) {
+          console.error('Ошибка загрузки:', err);
+          setError('Не удалось загрузить избранное');
+          setAnnouncements([]);
+        } finally {
+          setLoading(false);
         }
+      }
     };
 
     loadFavorites();
-}, [favorites, activeTab, token]);
-
+  }, [favorites, activeTab, token, localFavorites]);
 
   // Сортировка объявлений
   const sortedAnnouncements = React.useMemo(() => {
@@ -75,18 +76,19 @@ const FavoritesPage = () => {
         default: return b.date - a.date;
       }
     });
-  }, [announcements, sortOption, token]);
+  }, [announcements, sortOption]);
 
   const handleRemoveFavorite = (id) => {
     if (token) {
-        toggleFavorite(id);
+      toggleFavorite(id);
+      setAnnouncements(prev => prev.filter(item => item.id !== id));
     } else {
-        const newFavorites = localFavorites.filter(favId => favId !== id);
-        setLocalFavorites(newFavorites);
-        localStorage.setItem('guest_favorites', JSON.stringify(newFavorites));
-        setAnnouncements(prev => prev.filter(item => item.id !== id));
+      const newFavorites = localFavorites.filter(fav => fav.id !== id);
+      setLocalFavorites(newFavorites);
+      localStorage.setItem('guest_favorites', JSON.stringify(newFavorites));
+      setAnnouncements(newFavorites);
     }
-};
+  };
 
   return (
     <>
@@ -139,7 +141,7 @@ const FavoritesPage = () => {
                         alt={item.title} 
                         className="announcement-image" 
                         onError={(e) => {
-                          e.target.src = 'https://sun9-21.userapi.com/impg/dLJL9rctl21QsCZjldHnHQxCnH5RjQtieZ0D0g/fkogJXv_IEQ.jpg?size=1200x800&quality=95&sign=588aa60862d21ec0be777a1db320ce6d&type=album';
+                          e.target.src = DEFAULT_IMAGE_URL;
                         }}
                       />
                     </Link>
@@ -161,7 +163,6 @@ const FavoritesPage = () => {
                       <div className="walk-score">
                         <span>Оценка: </span>
                         <strong>{item.walk_score || 0}</strong><br />
-                        
                       </div>
                       <div className="announcement-actions">
                         <a
@@ -185,9 +186,9 @@ const FavoritesPage = () => {
               </div>
             ) : (
               <div className="empty-state">
-                {favorites.length === 0 
-                  ? 'В избранном пока нет объявлений' 
-                  : 'Не удалось загрузить объявления'}
+                {token 
+                  ? (favorites.length === 0 ? 'В избранном пока нет объявлений' : 'Не удалось загрузить объявления')
+                  : (localFavorites.length === 0 ? 'В избранном пока нет объявлений' : 'Не удалось загрузить объявления')}
               </div>
             )}
           </>
