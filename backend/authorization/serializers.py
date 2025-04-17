@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import Favorite
+from .models import Favorite, SearchQuery
 from announcements.serializers import AnnouncementSerializer
 
 class UserSerializer(serializers.ModelSerializer):
@@ -22,3 +22,9 @@ class FavoriteSerializer(serializers.ModelSerializer):
         model = Favorite
         fields = ['id', 'announcement', 'created_at']
         read_only_fields = ['user']
+        
+class SearchQuerySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SearchQuery
+        fields = ['id', 'name', 'query_params', 'created_at']
+        read_only_fields = ['created_at']

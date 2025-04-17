@@ -1,6 +1,6 @@
 from django.contrib import admin
 from .models import Amenities
-import subprocess
+
 
 @admin.register(Amenities)
 class AmenitiesAdmin(admin.ModelAdmin):

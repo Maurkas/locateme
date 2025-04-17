@@ -5,8 +5,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 from .serializers import UserSerializer
 from rest_framework.permissions import IsAuthenticated
-from .models import Favorite
-from .serializers import FavoriteSerializer
+from .models import Favorite, SearchQuery
+from .serializers import FavoriteSerializer, SearchQuerySerializer
 from announcements.models import Announcements
 
 
@@ -76,4 +76,30 @@ class FavoriteListView(APIView):
         favorites = Favorite.objects.filter(user=request.user).select_related('announcement')
         serializer = FavoriteSerializer(favorites, many=True)
         return Response(serializer.data)
+    
+class SavedSearchView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    # Получить все сохраненные поиски
+    def get(self, request):
+        searches = SearchQuery.objects.filter(user=request.user)
+        serializer = SearchQuerySerializer(searches, many=True)
+        return Response(serializer.data)
+
+    # Сохранить новый поиск
+    def post(self, request):
+        serializer = SearchQuerySerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(user=request.user)
+            return Response(serializer.data, status=201)
+        return Response(serializer.errors, status=400)
+
+    # Удалить поиск
+    def delete(self, request, search_id):
+        try:
+            search = SearchQuery.objects.get(id=search_id, user=request.user)
+            search.delete()
+            return Response(status=204)
+        except SearchQuery.DoesNotExist:
+            return Response({'error': 'Поиск не найден'}, status=404)
     

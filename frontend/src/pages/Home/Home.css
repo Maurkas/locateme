@@ -222,3 +222,22 @@ footer {
     opacity: 0.5;
     cursor: not-allowed;
 }
+
+.save-search-btn {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.dropdown-btn.save-search-btn::after {
+    display: none !important;
+}
+
+.save-search-btn:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.save-search-btn:hover:not(:disabled) {
+    background-color: #45a049;
+}

@@ -8,7 +8,6 @@ class BuildingSerializer(serializers.ModelSerializer):
         fields = [
             'building_id',
             'address_text',
-            'address_url',
             'district',
             'coordinates',
             'house_type',
@@ -32,7 +31,10 @@ class AnnouncementSerializer(serializers.ModelSerializer):
         depth = 1
         
     def get_walk_score(self, obj):
-        return obj.walk_score
+        # Если walk_score не установлен, попробуем вычислить его
+        if obj.walk_score is None and obj.coordinates:
+            return obj.calculate_walk_score()
+        return obj.walk_score or 0  # Возвращаем 0 вместо None
     
     def get_personal_score(self, obj):
         request = self.context.get('request')

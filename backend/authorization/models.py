@@ -27,4 +27,17 @@ class Favorite(models.Model):
         unique_together = ('user', 'announcement')
     
     def __str__(self):
-        return f"{self.user.username} - {self.announcement.title}"
+        return f"{self.user.username} - {self.announcement.name}"
+    
+class SearchQuery(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    name = models.CharField(max_length=100, blank=True)
+    params = models.JSONField()  # Параметры поиска
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Поисковый запрос'
+        verbose_name_plural = 'Поисковые запросы'
+
+    def __str__(self):
+        return f"{self.user.username} - {self.name or 'Без названия'}"

@@ -1,6 +1,6 @@
 from django.db import models
 from buildings.models import Buildings
-from .utils import calculate_walk_score, calculate_personalized_score
+from .utils import calculate_walk_score as calculate_walk_score_util, calculate_personalized_score_db
 from amenities.models import Amenities
 
 class Announcements(models.Model):
@@ -27,6 +27,7 @@ class Announcements(models.Model):
     bathroom = models.CharField(('Санузел'), max_length=50, blank=True, null=True, default=None)
     windows = models.CharField(('Окна'), max_length=50, blank=True, null=True, default=None)
     repair = models.CharField(('Ремонт'), max_length=50, blank=True, null=True, default=None)
+    walk_score = models.IntegerField(('Walk Score'), null=True, blank=True, help_text="Оценка пешей доступности (0-100)")
     building = models.ForeignKey(
         Buildings,
         on_delete=models.CASCADE,
@@ -35,51 +36,57 @@ class Announcements(models.Model):
         blank=True
     )
     
-    def calculate_walk_score(self):
-        """
-        Рассчитывает Walk Score для текущего объявления.
-        """
-        # Преобразуем строку coordinates в кортеж (latitude, longitude)
+    def calculate_walk_score(self, save=False):
+        if not self.building:
+            return 0  # Если нет здания, вернем 0
+
         try:
-            lat, lon = map(float, self.coordinates.split(","))
-        except (ValueError, AttributeError):
-            return 0  # Если координаты недоступны, возвращаем 0
+            score = calculate_walk_score_util(self)
+            if not save:
+                self.walk_score = score
+                self.save(update_fields=['walk_score'])
+            
+            return score
 
-        # Получаем все объекты инфраструктуры
-        infrastructure_data = [
-            {"type": obj.type, "coordinates": obj.coordinates}
-            for obj in Amenities.objects.all()
-        ]
-
-        # Рассчитываем Walk Score
-        return calculate_walk_score((lat, lon), infrastructure_data)
+        except Exception as e:
+            print(f"Error calculating walk score: {e}")
+            return 0
 
     @property
-    def walk_score(self):
-        return self.calculate_walk_score()
+    def walk_score_value(self):
+        if self._state.adding:  # Если объект еще не сохранен в БД
+            return self.calculate_walk_score()
+        return self.walk_score or 0
     
-    def calculate_personal_score(self, user_filters=None, verbose=False):  # Добавлен параметр verbose
+    def save(self, *args, **kwargs):
+        needs_recalculation = (
+            not self.pk or 
+            not self.walk_score or
+            (self.pk and (
+                self.coordinates != Announcements.objects.get(pk=self.pk).coordinates or
+                self.building_id != Announcements.objects.get(pk=self.pk).building_id
+            ))
+        )
+        if needs_recalculation:
+            self.walk_score = self.calculate_walk_score(save=True)
+            print(f"Calculated walk_score: {self.walk_score}")
+        
+        super().save(*args, **kwargs)
+    
+    def calculate_personal_score(self, user_filters=None, verbose=False):
         """
-        Рассчитывает персонализированную оценку для текущего объявления.
+        Быстрый расчёт персонализированной оценки по данным в БД.
         """
         if not user_filters:
             return None
-            
-        try:
-            lat, lon = map(float, self.coordinates.split(","))
-        except (ValueError, AttributeError):
-            return None
 
-        infrastructure_data = [
-            {"type": obj.type, "coordinates": obj.coordinates}
-            for obj in Amenities.objects.all()
-        ]
+        if not self.building:
+            return None  # у объявления нет связанного здания
 
-        return calculate_personalized_score(
-            announcement_coordinates=(lat, lon),
-            infrastructure_data=infrastructure_data,
+        return calculate_personalized_score_db(
+            building=self.building,
             user_filters=user_filters,
-            verbose=verbose  # Передаём параметр явно
+            verbose=verbose
         )
 
     @property

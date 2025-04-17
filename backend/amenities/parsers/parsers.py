@@ -5,7 +5,6 @@ from station_parser import run_station_parser
 from grocery_store_parser import run_grocery_store_parser
 from bank_parser import run_bank_parser
 from gym_parser import run_gym_parser
-from gas_station_parser import run_gas_station_parser
 from mosque_religion_parser import run_mosque_religion_parser
 from church_religion_parser import run_church_religion_parser
 from restaurant_parser import run_restaurant_parser
@@ -44,8 +43,6 @@ def start_parsers():
         selected_parsers.append("Банки")
     if gym_var.get():
         selected_parsers.append("Тренажерные залы")
-    if gas_station_var.get():
-        selected_parsers.append("Заправки")
     if religious_var.get():
         selected_parsers.append("Религиозные объекты")
     if restaurant_var.get():
@@ -70,9 +67,6 @@ def start_parsers():
             thread.start()
         elif parser == "Тренажерные залы":
             thread = threading.Thread(target=run_async_parser, args=(run_gym_parser, log, lambda: stop_parsing))
-            thread.start()
-        elif parser == "Заправки":
-            thread = threading.Thread(target=run_async_parser, args=(run_gas_station_parser, log, lambda: stop_parsing))
             thread.start()
         elif parser == "Религиозные объекты":
             thread1 = threading.Thread(target=run_async_parser, args=(run_mosque_religion_parser, log, lambda: stop_parsing))
@@ -102,7 +96,6 @@ bank_var = tk.BooleanVar()
 gym_var = tk.BooleanVar()
 station_var = tk.BooleanVar()
 grocery_store_var = tk.BooleanVar()
-gas_station_var = tk.BooleanVar()
 religious_var = tk.BooleanVar()
 restaurant_var = tk.BooleanVar()
 
@@ -114,7 +107,6 @@ tk.Checkbutton(checkbox_frame, text="Остановки", variable=station_var).
 tk.Checkbutton(checkbox_frame, text="Продукты", variable=grocery_store_var).pack(anchor="w")
 tk.Checkbutton(checkbox_frame, text="Банки", variable=bank_var).pack(anchor="w")
 tk.Checkbutton(checkbox_frame, text="Тренажерные залы", variable=gym_var).pack(anchor="w")
-tk.Checkbutton(checkbox_frame, text="Заправки", variable=gas_station_var).pack(anchor="w")
 tk.Checkbutton(checkbox_frame, text="Религиозные объекты", variable=religious_var).pack(anchor="w")
 tk.Checkbutton(checkbox_frame, text="Рестораны", variable=restaurant_var).pack(anchor="w")
 

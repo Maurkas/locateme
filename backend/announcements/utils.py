@@ -1,5 +1,6 @@
 import math, requests
 from typing import Optional
+from buildings.models import BuildingAmenities, Buildings
 
 
 OSRM_SERVER_URL = "http://localhost:5000"
@@ -76,96 +77,87 @@ DISTANCE_THRESHOLDS = {
     'far': 2.0        # км - дальняя зона
 }
 
-def calculate_walk_score(announcement_coordinates, infrastructure_data):
-    MAX_THEORETICAL_SCORE = 80
-    ann_lat, ann_lon = announcement_coordinates
-    category_scores = {}
+def calculate_walk_score(announcement):
+    """
+    Рассчитывает Walk Score для объявления на основе BuildingAmenities
+    """
+    if not hasattr(announcement, 'building') or not announcement.building:
+        return 0
 
-    for obj in infrastructure_data:
-        obj_type = obj.get("type")
-        if obj_type not in CATEGORY_WEIGHTS:
-            continue
+    try:
+        MAX_THEORETICAL_SCORE = 80
+        category_scores = {}
 
-        try:
-            obj_lat, obj_lon = map(float, obj.get("coordinates", "0,0").split(","))
-        except (ValueError, AttributeError):
-            continue
-
-        # Получаем расстояние по прямой
-        straight_dist = haversine(ann_lat, ann_lon, obj_lat, obj_lon)
+        # Получаем все связанные amenities для этого здания
+        amenities = BuildingAmenities.objects.filter(building=announcement.building)
         
-        # Оцениваем реальное городское расстояние
-        urban_dist = estimate_urban_distance(straight_dist)
+        for amenity in amenities:
+            obj_type = amenity.amenity.type
+            if obj_type not in CATEGORY_WEIGHTS:
+                continue
+
+            urban_dist = amenity.distance / 1000
+            
+            if urban_dist <= DISTANCE_THRESHOLDS['walkable']:
+                base_score = 4
+            elif urban_dist <= DISTANCE_THRESHOLDS['nearby']:
+                base_score = 2
+            else:
+                continue
+
+            weighted_score = base_score * CATEGORY_WEIGHTS[obj_type]
+            
+            if obj_type not in category_scores or weighted_score > category_scores[obj_type][0]:
+                category_scores[obj_type] = (weighted_score, urban_dist)
+
+        total_score = 0
+        for obj_type, (score, _) in category_scores.items():
+            capped_score = min(score, MAX_CATEGORY_SCORE)
+            total_score += capped_score
+
+        normalized_score = min(total_score, MAX_THEORETICAL_SCORE) / MAX_THEORETICAL_SCORE
+        logistic_score = 100 / (1 + math.exp(-10 * (normalized_score - 0.5)))
         
-        # Используем urban_dist вместо straight_dist для классификации
-        if urban_dist <= DISTANCE_THRESHOLDS['walkable']:
-            base_score = 4
-        elif urban_dist <= DISTANCE_THRESHOLDS['nearby']:
-            base_score = 2
-        else:
-            continue
+        return round(logistic_score)
 
-        weighted_score = base_score * CATEGORY_WEIGHTS[obj_type]
-        
-        if obj_type not in category_scores or weighted_score > category_scores[obj_type][0]:
-            category_scores[obj_type] = (weighted_score, urban_dist)
+    except Exception as e:
+        print(f"Error calculating walk score: {e}")
+        return 0
 
-    total_score = 0
-    for obj_type, (score, _) in category_scores.items():
-        capped_score = min(score, MAX_CATEGORY_SCORE)
-        total_score += capped_score
-
-    normalized_score = min(total_score, MAX_THEORETICAL_SCORE) / MAX_THEORETICAL_SCORE
-    logistic_score = 100 / (1 + math.exp(-10 * (normalized_score - 0.5)))
-    
-    return round(logistic_score)
-
-def calculate_personalized_score(
-    announcement_coordinates: tuple[float, float],
-    infrastructure_data: list[dict],
+def calculate_personalized_score_db(
+    building: Buildings,
     user_filters: dict[str, str],
     verbose: bool = False
 ) -> int:
-    ann_lat, ann_lon = announcement_coordinates
-    category_scores = {}
-
+    """
+    Быстрый расчёт персональной оценки на основе building_amenities.
+    """
     BASE_WEIGHTS = {
         "stops": 3, "school": 4, "kindergarten": 3, "pickup_point": 2,
         "polyclinic": 3, "center": 2, "gym": 2, "mall": 3,
-        "college_and_university": 2, "beauty_salon": 1, "gas_station": 1,
+        "college_and_university": 2, "beauty_salon": 1,
         "pharmacy": 2, "grocery_store": 4, "religious": 1, "restaurant": 2,
         "bank": 2
     }
 
-    # Учитываем только выбранные категории (не "any")
     active_filters = {k: v for k, v in user_filters.items() if v != "any"}
-    
     if not active_filters:
-        return 50  # Если все фильтры "any" - нейтральная оценка
+        return 50
 
-    max_possible = sum(weight * 2 for weight in BASE_WEIGHTS.values())
+    # Загружаем удобства рядом с этим зданием
+    building_amenities = BuildingAmenities.objects.select_related("amenity").filter(building=building)
+    category_scores = {}
+    max_possible = sum(BASE_WEIGHTS.get(k, 1) * 2 for k in active_filters)
 
-    for obj in infrastructure_data:
-        obj_type = obj.get("type")
+    for ba in building_amenities:
+        obj_type = ba.amenity.type
         if obj_type not in active_filters:
             continue
 
-        try:
-            obj_lat, obj_lon = map(float, obj.get("coordinates", "0,0").split(","))
-            distance = get_walking_distance_osrm(
-                (ann_lon, ann_lat),  # OSRM ожидает (lon, lat)
-                (obj_lon, obj_lat)
-            )
-            if distance is None:
-                continue 
-        except (ValueError, AttributeError):
-            continue
-
+        distance = ba.distance / 1000  # переводим в км
         preference = active_filters[obj_type]
-        weight = BASE_WEIGHTS[obj_type]
+        weight = BASE_WEIGHTS.get(obj_type, 1)
 
-        distance = round(distance / 1000, 1)
-        print(distance)
         if distance <= DISTANCE_THRESHOLDS['walkable']:
             zone = 'walkable'
         elif distance <= DISTANCE_THRESHOLDS['nearby']:
@@ -179,7 +171,7 @@ def calculate_personalized_score(
             elif zone == 'nearby':
                 score = weight * 1
             else:
-                score = -weight * 0.5
+                score = -weight * 0.5 # Математическую
         elif preference == "far":
             if zone == 'far':
                 score = weight * 1
@@ -196,10 +188,8 @@ def calculate_personalized_score(
     personalized_score = max(0, min(100, round(normalized_score)))
 
     if verbose:
-        print("\n=== Результаты расчета ===")
-        print(f"Активные фильтры: {active_filters}")
-        print(f"Найденные совпадения: {category_scores}")
-        print(f"Сырой балл: {total_score} (максимум: {max_possible})")
-        print(f"Нормализованная оценка: {personalized_score}\n")
+        print("\n=== DB: Расчёт персональной оценки ===")
+        print(f"Фильтры: {active_filters}")
+        print(f"Сумма: {total_score}/{max_possible} = {personalized_score}")
 
     return personalized_score

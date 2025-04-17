@@ -141,8 +141,8 @@ class AnnouncementListView(generics.ListAPIView):
             queryset = queryset.order_by('price')
         elif sort == 'price_desc':
             queryset = queryset.order_by('-price')
-        # elif sort == 'score':
-        #     queryset = queryset.order_by('-walk_score')
+        elif sort == 'score':
+            queryset = queryset.order_by('-walk_score')
         elif sort == 'date':
             queryset = queryset.order_by('-published_at')
         else:
@@ -215,7 +215,6 @@ class AnnouncementDetailView(View):
                 'personal_score': announcement.calculate_personal_score(user_filters),
                 'nearby_amenities': nearby_amenities,
             }
-            
             return JsonResponse(data)
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)

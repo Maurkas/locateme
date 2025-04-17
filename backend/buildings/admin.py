@@ -1,20 +1,18 @@
 from django.contrib import admin
-from .models import Buildings
+from buildings.models import Buildings, BuildingAmenities
+
 
 class BuildingsAdmin(admin.ModelAdmin):
     list_display = ('address_text', 'coordinates')
 
-    # Добавляем кастомное действие
-    actions = ['delete_null_address']
-
-    def delete_null_address(self, request, queryset):
-        # Игнорируем queryset и удаляем все записи с address_text = NULL
-        deleted_count = Buildings.objects.filter(address_text__isnull=True).delete()[0]
-        if deleted_count:
-            self.message_user(request, f"Удалено {deleted_count} зданий с пустым адресом.")
-        else:
-            self.message_user(request, "Здания с пустым адресом не найдены.")
-
-    delete_null_address.short_description = "Удалить все здания с пустым адресом"
-
+class BuildingsAmenitiesAdmin(admin.ModelAdmin):
+    list_display = ('building', 'amenity', 'distance')
+    change_list_template = "admin/buildings/change_list.html"
+    
+    def changelist_view(self, request, extra_context=None):
+        extra_context = extra_context or {}
+        extra_context['show_run_service_button'] = True
+        return super().changelist_view(request, extra_context=extra_context)
+    
 admin.site.register(Buildings, BuildingsAdmin)
+admin.site.register(BuildingAmenities, BuildingsAmenitiesAdmin)

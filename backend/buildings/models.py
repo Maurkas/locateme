@@ -1,11 +1,13 @@
 from django.db import models
+from django.urls import reverse
+from django.utils.html import format_html
+from amenities.models import Amenities
 
 
 class Buildings(models.Model):
     building_id = models.AutoField(primary_key=True)
     address_text = models.TextField(blank=True, null=True)
     district = models.CharField(('Район'), max_length=255, blank=True, null=True, default=None)
-    address_url = models.TextField(blank=True, null=True)
     coordinates = models.TextField(('Координаты'), blank=True, null=True)
     house_type = models.CharField(('Тип дома'), max_length=50, blank=True, null=True)
     year_of_construction = models.CharField(('Год постройки'), max_length=10, blank=True, null=True)
@@ -25,3 +27,18 @@ class Buildings(models.Model):
         verbose_name = "Buildings"
         db_table = 'buildings'
         
+        
+class BuildingAmenities(models.Model):
+    building = models.ForeignKey(Buildings, on_delete=models.CASCADE)
+    amenity = models.ForeignKey(Amenities, on_delete=models.CASCADE)
+    distance = models.FloatField(help_text="Дистанция в метрах")
+
+    def __str__(self):
+        return f"{self.building_id} ↔ {self.amenity_id}: {self.distance} м"
+
+    class Meta:
+        verbose_name = "building_amenities"
+        verbose_name_plural = "Связь здания и удобства"
+        db_table = "building_amenities"
+
+

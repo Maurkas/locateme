@@ -37,6 +37,7 @@ export const AnnouncementsService = {
   async getById(id) {
     try {
       const response = await axios.get(`${API_URL}/announcements/${id}/`);
+      console.log(response.data)
       return response.data;
     } catch (error) {
       console.error('Error fetching announcement:', error);

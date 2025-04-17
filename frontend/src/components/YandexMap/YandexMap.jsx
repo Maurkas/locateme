@@ -27,7 +27,6 @@ const YandexMap = ({ coordinates, amenities }) => {
     mall: 'islands#blueShoppingIcon',         // Торговые центры
     college_and_university: 'islands#blueCollegeIcon', // Вузы
     beauty_salon: 'islands#blueBeautyIcon',   // Салоны красоты
-    gas_station: 'islands#blueFuelIcon',      // АЗС
     pharmacy: 'islands#bluePharmacyIcon',     // Аптеки
     grocery_store: 'islands#blueShopIcon',    // Магазины
     religious: 'islands#bluePlaceOfWorshipIcon', // Религиозные места

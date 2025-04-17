@@ -112,6 +112,95 @@ class Home extends React.Component {
     }
   }
 
+  handleSaveSearch = async () => {
+    const { filters } = this.state;
+    const { saveSearch, token } = this.context;
+  
+    const hasActiveFilters = Object.entries(filters).some(([key, value]) => {
+      if (value === null || value === undefined || value === "any") return false;
+      if (Array.isArray(value) && value.length === 0) return false;
+      if (typeof value === 'object' && Object.keys(value).length === 0) return false;
+      return true;
+    });
+  
+    if (!hasActiveFilters) {
+      return;
+    }
+  
+    try {
+      // Формируем название поиска
+      let searchName = '';
+      
+      // Добавляем районы, если есть
+      if (filters.districts.length > 0) {
+        searchName += filters.districts.join(', ');
+      }
+      
+      // Добавляем комнаты, если есть
+      if (filters.rooms.length > 0) {
+        if (searchName.length > 0) searchName += ', ';
+        searchName += filters.rooms.map(r => `${r}к`).join(',');
+      }
+      
+      // Добавляем цену, если есть
+      if (filters.priceMin || filters.priceMax) {
+        if (searchName.length > 0) searchName += ', ';
+        searchName += `${filters.priceMin || '0'}-${filters.priceMax || '∞'}₽`;
+      }
+  
+      // Если ничего не выбрано (маловероятно, так как hasActiveFilters=true)
+      if (searchName.length === 0) {
+        searchName = 'Мой поиск';
+      }
+  
+      // Проверяем, есть ли уже такой поиск
+      const isSearchExists = (searches) => {
+        return searches.some(search => {
+          // Сравниваем основные параметры
+          const sameDistricts = JSON.stringify(search.params.districts) === JSON.stringify(filters.districts);
+          const sameRooms = JSON.stringify(search.params.rooms) === JSON.stringify(filters.rooms);
+          const samePrice = search.params.priceMin === filters.priceMin && 
+                           search.params.priceMax === filters.priceMax;
+          
+          return sameDistricts && sameRooms && samePrice;
+        });
+      };
+  
+      if (token) {
+        // Для авторизованных пользователей - проверяем в БД
+        const response = await axios.get(`${API_URL}/searches/`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        if (isSearchExists(response.data)) {
+          return;
+        }
+        
+        // Сохраняем в БД
+        await saveSearch(searchName, filters);
+      } else {
+        // Для гостей - проверяем в localStorage
+        const guestSearches = JSON.parse(localStorage.getItem('guest_searches') || '[]');
+        
+        if (isSearchExists(guestSearches)) {
+          return;
+        }
+        
+        // Сохраняем в localStorage
+        const newSearch = {
+          id: Date.now(),
+          name: searchName,
+          params: filters,
+          created_at: new Date().toISOString()
+        };
+        
+        localStorage.setItem('guest_searches', JSON.stringify([newSearch, ...guestSearches]));
+      }
+    } catch (error) {
+      console.error('Ошибка сохранения поиска:', error);
+    }
+  };
+
   // Переключение выпадающего меню
   toggleDropdown = (dropdownName) => {
     this.setState(prev => ({
@@ -315,7 +404,7 @@ class Home extends React.Component {
     const amenityKeys = [
       "stops", "school", "kindergarten", "pickup_point", 
       "polyclinic", "center", "gym", "mall", "college_and_university",
-      "beauty_salon", "gas_station", "pharmacy", "grocery_store",
+      "beauty_salon", "pharmacy", "grocery_store",
       "religious", "restaurant", "bank"
     ];
   
@@ -548,6 +637,7 @@ class Home extends React.Component {
                 )}
               </div>
               <button className='dropdown-btn' onClick={this.openModal}>Ещё фильтры</button>
+              <button className='dropdown-btn save-search-btn' onClick={this.handleSaveSearch}>Сохранить поиск</button>
             </div>
             <a className='search-form__search-btn' onClick={this.handleSearchClick}>Найти</a>
           </div>
@@ -562,7 +652,7 @@ class Home extends React.Component {
               <option value="date">По дате (новые)</option>
               <option value="price_asc">Дешевле</option>
               <option value="price_desc">Дороже</option>
-              {/* <option value="score">По оценке</option> */}
+              <option value="score">По оценке</option>
             </select>
           </div>
           <Filters 

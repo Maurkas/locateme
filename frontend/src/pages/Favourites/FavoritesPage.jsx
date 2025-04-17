@@ -2,17 +2,23 @@ import React, { useState, useContext, useEffect } from 'react';
 import { AuthContext } from '../../components/Authorization/AuthContext';
 import { NumericFormat } from 'react-number-format';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faHeart, faTrash, faSearch } from '@fortawesome/free-solid-svg-icons';
+import { faHeart, faTrash, faSearch, faFilter } from '@fortawesome/free-solid-svg-icons';
 import './FavoritesPage.css';
 import Header from '../../components/Header/Header';
 import Footer from '../../components/Footer/Footer';
 import { AnnouncementsService } from '../../services/api/announcements';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const DEFAULT_IMAGE_URL = 'https://sun9-21.userapi.com/impg/dLJL9rctl21QsCZjldHnHQxCnH5RjQtieZ0D0g/fkogJXv_IEQ.jpg?size=1200x800&quality=95&sign=588aa60862d21ec0be777a1db320ce6d&type=album';
 
 const FavoritesPage = () => {
-  const { favorites, toggleFavorite, token } = useContext(AuthContext);
+  const { 
+    favorites, 
+    toggleFavorite, 
+    token, 
+    savedSearches,
+    deleteSearch
+  } = useContext(AuthContext);
   const [activeTab, setActiveTab] = useState('announcements');
   const [sortOption, setSortOption] = useState('date');
   const [announcements, setAnnouncements] = useState([]);
@@ -22,6 +28,11 @@ const FavoritesPage = () => {
     const saved = localStorage.getItem('guest_favorites');
     return saved ? JSON.parse(saved) : [];
   });
+  const [localSearches, setLocalSearches] = useState(() => {
+    const saved = localStorage.getItem('guest_searches');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const navigate = useNavigate();
 
   // Загружаем данные объявлений
   useEffect(() => {
@@ -32,7 +43,6 @@ const FavoritesPage = () => {
         
         try {
           if (token) {
-            // Для авторизованных пользователей
             const response = await AnnouncementsService.getAll();
             if (!response?.results) throw new Error('Некорректные данные');
             
@@ -50,7 +60,6 @@ const FavoritesPage = () => {
               walk_score: ann.walk_score,
             })));
           } else {
-            // Для гостей - берем данные из localStorage
             setAnnouncements(localFavorites);
           }
         } catch (err) {
@@ -78,6 +87,14 @@ const FavoritesPage = () => {
     });
   }, [announcements, sortOption]);
 
+  // Сортировка сохраненных поисков (новые сверху)
+  const sortedSearches = React.useMemo(() => {
+    const searches = token ? savedSearches : localSearches;
+    return [...searches].sort((a, b) => 
+      new Date(b.created_at) - new Date(a.created_at)
+    );
+  }, [savedSearches, localSearches, token]);
+
   const handleRemoveFavorite = (id) => {
     if (token) {
       toggleFavorite(id);
@@ -88,6 +105,26 @@ const FavoritesPage = () => {
       localStorage.setItem('guest_favorites', JSON.stringify(newFavorites));
       setAnnouncements(newFavorites);
     }
+  };
+
+  const handleDeleteSearch = async (id) => {
+    try {
+      if (token) {
+        await deleteSearch(id);
+      } else {
+        const newSearches = localSearches.filter(search => search.id !== id);
+        setLocalSearches(newSearches);
+        localStorage.setItem('guest_searches', JSON.stringify(newSearches));
+      }
+    } catch (error) {
+      console.error('Ошибка удаления поиска:', error);
+    }
+  };
+
+  const handleApplySearch = (searchParams) => {
+    // Здесь должна быть логика применения параметров поиска
+    // Например, переход на главную страницу с примененными фильтрами
+    navigate('/', { state: { appliedFilters: searchParams } });
   };
 
   return (
@@ -195,8 +232,41 @@ const FavoritesPage = () => {
         )}
 
         {activeTab === 'searches' && (
-          <div className="empty-state">
-            Сохранённые поиски появятся здесь
+          <div className="searches-container">
+            {sortedSearches.length > 0 ? (
+              <div className="searches-list">
+                {sortedSearches.map((search) => (
+                  <div key={search.id} className="search-card">
+                    <div className="search-info">
+                      <h4>{search.name}</h4>
+                      <div className="search-date">
+                        {new Date(search.created_at).toLocaleDateString('ru-RU')}
+                      </div>
+                    </div>
+                    <div className="search-actions">
+                      <button
+                        className="apply-search-btn"
+                        onClick={() => handleApplySearch(search.params)}
+                      >
+                        <FontAwesomeIcon icon={faFilter} /> Применить
+                      </button>
+                      <button
+                        className="delete-search-btn"
+                        onClick={() => handleDeleteSearch(search.id)}
+                      >
+                        <FontAwesomeIcon icon={faTrash} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="empty-state">
+                {token
+                  ? 'У вас нет сохраненных поисков'
+                  : 'У вас нет сохраненных поисков. Войдите, чтобы сохранять поиски.'}
+              </div>
+            )}
           </div>
         )}
       </main>
