@@ -78,6 +78,7 @@ class Announcements(models.Model):
         Быстрый расчёт персонализированной оценки по данным в БД.
         """
         if not user_filters:
+            print("user_filters is empty or None")
             return None
 
         if not self.building:

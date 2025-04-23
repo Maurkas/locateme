@@ -385,7 +385,7 @@ class Home extends React.Component {
         if (isFullReset) {
           localStorage.removeItem('announcementFilters');
         }
-        //this.fetchAnnouncements();
+        this.fetchAnnouncements();
       }
     );
   };
@@ -435,12 +435,31 @@ class Home extends React.Component {
       this.setState({ loading: true });
 
       const { currentPage, itemsPerPage, filters, sortOption } = this.state;
+
+      const amenityFilters = {
+        stops: filters.stops,
+        school: filters.school,
+        kindergarten: filters.kindergarten,
+        pickup_point: filters.pickup_point,
+        polyclinic: filters.polyclinic,
+        center: filters.center,
+        gym: filters.gym,
+        mall: filters.mall,
+        college_and_university: filters.college_and_university,
+        beauty_salon: filters.beauty_salon,
+        pharmacy: filters.pharmacy,
+        grocery_store: filters.grocery_store,
+        religious: filters.religious,
+        restaurant: filters.restaurant,
+        bank: filters.bank
+      };
         
       const params = {
           page: currentPage,
           limit: itemsPerPage,
           sort: sortOption,
-          ...filters
+          ...this.state.filters,
+          ...amenityFilters
       };
       
       console.log("Отправляемые параметры фильтров:", params);
@@ -674,7 +693,12 @@ class Home extends React.Component {
                     <div className="col-md-4" key={announcement.announcement_id}>
                       <div className="card mb-4 box-shadow">
                         <div className="card-img-container">
-                          <Link to={`/announcement/${announcement.announcement_id}`}>
+                        <Link
+                          to={`/announcement/${announcement.announcement_id}`}
+                          state={{ 
+                            personal_score: announcement.personal_score
+                          }}
+                        >
                             <img
                               className="card-img-top"
                               src={announcement.photo}
@@ -702,8 +726,11 @@ class Home extends React.Component {
                           </button>
                         </div>
                         <div className="card-body">
-                          <Link 
-                            to={`/announcement/${announcement.announcement_id}`}
+                        <Link
+                          to={`/announcement/${announcement.announcement_id}`}
+                          state={{ 
+                            personal_score: announcement.personal_score
+                          }}
                             className="card-title-link"
                           >
                             <h5 className="card-title">{announcement.name}</h5>
@@ -724,8 +751,9 @@ class Home extends React.Component {
                           <div className="walk-score">
                             <span>Оценка: </span>
                             <strong>{announcement.walk_score || 0}</strong><br />
-                            {this.hasActiveAmenityFilters() && (
-                              <strong>{announcement.personal_score || ''}</strong>
+                            {announcement.personal_score && (
+                              <span>Персональная оценка: 
+                              <strong>{announcement.personal_score || ''}</strong></span>
                             )}
                           </div>
                         </div>

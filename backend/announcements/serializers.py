@@ -41,16 +41,31 @@ class AnnouncementSerializer(serializers.ModelSerializer):
         if not request:
             return None
             
-        # Собираем фильтры удобств из query-параметров
+        all_params = request.GET.dict()
+        
+        # Определяем допустимые amenity-фильтры
+        allowed_filters = [
+            "stops", "school", "kindergarten", "pickup_point",
+            "polyclinic", "center", "gym", "mall", "college_and_university",
+            "beauty_salon", "pharmacy", "grocery_store",
+            "religious", "restaurant", "bank"
+        ]
+        
+        # Фильтруем только нужные параметры
         amenities_filters = {
-            key.split('amenities_')[1]: value
-            for key, value in request.GET.items()
-            if key.startswith('amenities_') and 
-               value in ["any", "nearby", "far", "close"]
+            key: value
+            for key, value in all_params.items()
+            if key in allowed_filters and 
+               value in ["any", "far", "close"]
         }
         
+        if not amenities_filters:
+            print("No valid amenity filters found")
+            return None
+        
+        print("Processed amenity filters:", amenities_filters)  # Для отладки
+        
         # Преобразуем "close" в "nearby" для бэкенда
-        #print("Фильтры из запроса:", amenities_filters)
         translated_filters = {
             k: "nearby" if v == "close" else v
             for k, v in amenities_filters.items()

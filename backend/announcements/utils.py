@@ -142,7 +142,7 @@ def calculate_personalized_score_db(
 
     active_filters = {k: v for k, v in user_filters.items() if v != "any"}
     if not active_filters:
-        return 50
+        return
 
     # Загружаем удобства рядом с этим зданием
     building_amenities = BuildingAmenities.objects.select_related("amenity").filter(building=building)

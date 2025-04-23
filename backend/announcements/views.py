@@ -173,12 +173,6 @@ class AnnouncementDetailView(View):
                         "distance": round(distance, 2),
                     })
                     
-            user_filters = {
-                key.split('amenities_')[1]: value
-                for key, value in request.GET.items()
-                if key.startswith('amenities_') and 
-                   value in ["any", "nearby", "far", "close"]
-            }
 
             data = {
                 'id': announcement.id,
@@ -212,7 +206,6 @@ class AnnouncementDetailView(View):
                     'parking': announcement.building.parking if announcement.building else None,
                 } if announcement.building else None,
                 'walk_score': announcement.walk_score,
-                'personal_score': announcement.calculate_personal_score(user_filters),
                 'nearby_amenities': nearby_amenities,
             }
             return JsonResponse(data)

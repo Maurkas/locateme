@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useLocation } from 'react-router-dom';
 import { AnnouncementsService } from '../../services/api/announcements';
 import './AnnouncementDetail.css';
 import Header from '../../components/Header/Header';
@@ -11,6 +11,9 @@ const AnnouncementDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const { id } = useParams();
+  const location = useLocation();
+
+  const [personalScore, setPersonalScore] = useState(location.state?.personal_score || null);
 
   useEffect(() => {
     const fetchAnnouncement = async () => {
@@ -47,7 +50,10 @@ const AnnouncementDetail = () => {
           <div className="announcement__content">
             <div className="announcement__header">
               <h1 className="announcement__title">{announcement.name}</h1>
-              <span className="announcement__walk-score">Оценка: {announcement.walk_score || 0}</span>
+              <span className="announcement__walk-score">Оценка: {announcement.walk_score || 0}</span><br></br>
+              {personalScore && (
+                <span className="announcement__walk-score">Персональная оценка: {personalScore}</span>
+              )}
               <div className="announcement__price">
                 {new Intl.NumberFormat('ru-RU', {
                   style: 'currency',

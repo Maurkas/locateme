@@ -34,14 +34,16 @@ export const AnnouncementsService = {
     }
   },
 
-  async getById(id) {
+  async getById(id, filters = {}) {
     try {
-      const response = await axios.get(`${API_URL}/announcements/${id}/`);
-      console.log(response.data)
+      const response = await axios.get(`${API_URL}/announcements/${id}/`, {
+        params: filters,
+        paramsSerializer: (params) => qs.stringify(params, { arrayFormat: 'repeat' }),
+      });
       return response.data;
     } catch (error) {
       console.error('Error fetching announcement:', error);
       throw error;
     }
-  },
+  }
 };
