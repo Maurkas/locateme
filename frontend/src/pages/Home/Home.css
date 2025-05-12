@@ -73,20 +73,8 @@
     border-radius: 0 6px 6px 0;
 }
 
-.album {
-    background-color: #fff !important;
-}
-
-.card {
-    min-height: 427px;
-}
-
 footer {
     margin-top: 40px;
-}
-
-.card-title {
-    color: #000;
 }
 
 /* Стили для выпадающих меню */
@@ -163,34 +151,6 @@ footer {
     color: #616161;
 }
 
-.card-img-container {
-    position: relative;
-}
-  
-.favorite-btn {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    background: rgba(0, 0, 0, 0.5);
-    border: none;
-    border-radius: 50%;
-    width: 36px;
-    height: 36px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.favorite-btn:hover {
-    background: rgba(0, 0, 0, 0.7);
-}
-
-.favorite-btn svg {
-    font-size: 18px;
-}
-
 .pagination {
     display: flex;
     justify-content: center;
@@ -240,4 +200,24 @@ footer {
 
 .save-search-btn:hover:not(:disabled) {
     background-color: #45a049;
+}
+
+/* Добавьте в конец файла */
+.save-notification {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #4CAF50;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 4px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+}
+
+.save-notification.show {
+    opacity: 1;
 }

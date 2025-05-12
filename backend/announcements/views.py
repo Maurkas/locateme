@@ -4,6 +4,7 @@ from django.db.models import Q, F
 from django.http import HttpResponseRedirect, JsonResponse
 from django.contrib.admin.views.decorators import staff_member_required
 import subprocess
+from buildings.models import BuildingAmenities
 from .serializers import AnnouncementSerializer
 from rest_framework import generics
 from .models import Announcements
@@ -13,7 +14,11 @@ from amenities.models import Amenities
 from .utils import haversine
 import logging
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from .utils import calculate_personal_walk_score
+from django.views.decorators.csrf import csrf_exempt
+from buildings.serializers import BuildingAmenitiesSerializer
 
 logger = logging.getLogger(__name__)
 
@@ -154,26 +159,9 @@ class AnnouncementDetailView(View):
     def get(self, request, announcement_id):
         try:
             announcement = get_object_or_404(Announcements, announcement_id=announcement_id)
-            
-            # Получаем координаты объявления
-            ann_lat, ann_lon = map(float, announcement.coordinates.split(","))
-
-            # Фильтруем ближайшие объекты инфраструктуры
-            radius = 0.5
-            nearby_amenities = []
-            for obj in Amenities.objects.all():
-                obj_lat, obj_lon = map(float, obj.coordinates.split(","))
-                distance = haversine(ann_lat, ann_lon, obj_lat, obj_lon)
-
-                if distance <= radius:
-                    nearby_amenities.append({
-                        "type": obj.type,
-                        "title": obj.title,
-                        "coordinates": obj.coordinates,
-                        "distance": round(distance, 2),
-                    })
+            nearby_amenities = BuildingAmenities.objects.filter(building=announcement.building).select_related('amenity')
+            nearby_amenities_serialized = BuildingAmenitiesSerializer(nearby_amenities, many=True).data
                     
-
             data = {
                 'id': announcement.id,
                 'announcement_id': announcement.announcement_id,
@@ -206,9 +194,73 @@ class AnnouncementDetailView(View):
                     'parking': announcement.building.parking if announcement.building else None,
                 } if announcement.building else None,
                 'walk_score': announcement.walk_score,
-                'nearby_amenities': nearby_amenities,
+                'nearby_amenities': nearby_amenities_serialized,
             }
             return JsonResponse(data)
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
         
+@csrf_exempt
+@api_view(['POST'])
+def calculate_scores(request):
+    try:
+        coordinates = request.data.get("coordinates")
+        filters = request.data.get("filters")
+
+        if isinstance(coordinates, str):
+            coordinates = tuple(map(float, coordinates.strip("()").split(",")))
+        elif isinstance(coordinates, list):
+            coordinates = tuple(map(float, coordinates))
+        else:
+            return Response({"error": "Invalid coordinates format"}, status=400)
+
+        infrastructure = []
+        amenities_queryset = Amenities.objects.all()  # Получаем QuerySet
+        
+        for obj in amenities_queryset:  # Итерируемся по QuerySet
+            try:
+                # Проверяем, что координаты существуют и в правильном формате
+                if hasattr(obj, 'coordinates') and obj.coordinates:
+                    if isinstance(obj.coordinates, (list, tuple)):
+                        coords = obj.coordinates
+                    elif isinstance(obj.coordinates, str):
+                        coords = list(map(float, obj.coordinates.strip("()").split(",")))
+                    else:
+                        continue
+                        
+                    if len(coords) >= 2:
+                        infrastructure.append({
+                            "type": obj.type,
+                            "lat": float(coords[0]),
+                            "lon": float(coords[1])
+                        })
+            except (AttributeError, ValueError, TypeError) as e:
+                print(f"Error processing amenity {obj.id}: {str(e)}")
+                continue
+
+        if not coordinates or not filters or not infrastructure:
+            return Response({"error": "Missing data"}, status=400)
+
+        score_haversine = calculate_personal_walk_score(
+            announcement_coordinates=coordinates,
+            infrastructure_data=infrastructure,
+            user_filters=filters,
+            use_estimated=False
+        )
+
+        score_estimated = calculate_personal_walk_score(
+            announcement_coordinates=coordinates,
+            infrastructure_data=infrastructure,
+            user_filters=filters,
+            use_estimated=True
+        )
+
+        return Response({
+            "haversine_score": score_haversine,
+            "estimated_score": score_estimated
+        })
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return Response({"error": str(e)}, status=500)

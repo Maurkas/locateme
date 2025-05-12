@@ -1,106 +1,131 @@
 import React, { useEffect, useRef } from 'react';
 import './YandexMap.css';
 
-function haversine(lat1, lon1, lat2, lon2) {
-  const R = 6371;
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a = 
-    Math.sin(dLat/2) * Math.sin(dLat/2) +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-    Math.sin(dLon/2) * Math.sin(dLon/2);
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-}
-
 const YandexMap = ({ coordinates, amenities }) => {
   const mapRef = useRef(null);
 
-  // Пресеты иконок для разных типов удобств
-  const iconPresets = {
-    stops: 'islands#blueStretchyIcon',        // Остановки
-    school: 'islands#blueSchoolIcon',         // Школы
-    kindergarten: 'islands#blueKindergartenIcon', // Детские сады
-    pickup_point: 'islands#blueDeliveryIcon', // Пункты выдачи
-    polyclinic: 'islands#blueMedicalIcon',    // Поликлиники
-    center: 'islands#blueGovernmentIcon',     // Центры
-    gym: 'islands#blueSportIcon',             // Спортзалы
-    mall: 'islands#blueShoppingIcon',         // Торговые центры
-    college_and_university: 'islands#blueCollegeIcon', // Вузы
-    beauty_salon: 'islands#blueBeautyIcon',   // Салоны красоты
-    pharmacy: 'islands#bluePharmacyIcon',     // Аптеки
-    grocery_store: 'islands#blueShopIcon',    // Магазины
-    religious: 'islands#bluePlaceOfWorshipIcon', // Религиозные места
-    restaurant: 'islands#blueFoodIcon',       // Рестораны
-    bank: 'islands#blueMoneyIcon',            // Банки
+  const getAmenityIcon = (category) => {
+    const icons = {
+      station: '🚌',
+      school: '🏫',
+      kindergarten: '🏠',
+      pickup_point: '📦',
+      polyclinic: '🏥',
+      center: '🏙️',
+      gym: '💪',
+      mall: '🛍️',
+      college_and_university: '🎓',
+      beauty_salon: '💇',
+      pharmacy: '💊',
+      grocery_store: '🛒',
+      restaurant: '🍽️',
+      park: '🌳',
+      bank: '🏦',
+      religious: '⛪',
+    };
+    return icons[category] || '📍';
+  };
+
+  const getAmenityLabel = (key) => {
+    const labels = {
+      station: 'Остановка',
+      school: 'Школа',
+      kindergarten: 'Детский сад',
+      pickup_point: 'Пункт выдачи',
+      polyclinic: 'Поликлиника',
+      center: 'Центр города',
+      gym: 'Спортзал',
+      mall: 'Торговый центр',
+      college_and_university: 'Колледжи и Вузы',
+      beauty_salon: 'Салон красоты',
+      pharmacy: 'Аптека',
+      grocery_store: 'Продуктовый магазин',
+      religious: 'Религиозное место',
+      restaurant: 'Ресторан',
+      bank: 'Банк',
+      park: 'Парк',
+    };
+    return labels[key] || key;
   };
 
   useEffect(() => {
-    if (!coordinates) return;
+    if (!coordinates || !window.ymaps) return;
 
     const [lat, lon] = coordinates.split(',').map(coord => parseFloat(coord.trim()));
-    if (!lat || !lon) return;
+    if (isNaN(lat) || isNaN(lon)) return;
 
-    const init = () => {
+    window.ymaps.ready(() => {
       const map = new window.ymaps.Map(mapRef.current, {
         center: [lat, lon],
-        zoom: 16,
+        zoom: 15,
         controls: ['zoomControl', 'geolocationControl'],
       }, {
-        searchControlProvider: 'yandex#search',
         suppressMapOpenBlock: true,
         yandexMapDisablePoiInteractivity: true,
       });
 
-      // Метка для основного здания
-      map.geoObjects.add(new window.ymaps.Placemark([lat, lon], {
+      // Главная метка (объект)
+      const mainPlacemark = new window.ymaps.Placemark([lat, lon], {
         balloonContent: 'Здание находится здесь',
+        hintContent: 'Здание',
       }, {
-        preset: 'islands#redDotIconWithCaption',
-      }));
+        preset: 'islands#redIcon',
+        zIndex: 1000,
+      });
 
-      // Фильтруем удобства - оставляем только ближайшие
-      if (amenities && amenities.length > 0) {
-        const closestAmenities = {};
-        
-        // Находим ближайшие удобства каждого типа
+      map.geoObjects.add(mainPlacemark);
+
+      // Метки удобств
+      if (amenities?.length) {
         amenities.forEach(amenity => {
           const [amenityLat, amenityLon] = amenity.coordinates.split(',').map(parseFloat);
-          const distance = haversine(lat, lon, amenityLat, amenityLon);
-          
-          if (!closestAmenities[amenity.type] || 
-              distance < closestAmenities[amenity.type].distance) {
-            closestAmenities[amenity.type] = {
-              ...amenity,
-              distance: distance
-            };
-          }
-        });
+          if (isNaN(amenityLat) || isNaN(amenityLon)) return;
 
-        // Добавляем на карту только ближайшие удобства
-        Object.values(closestAmenities).forEach(amenity => {
-          const [amenityLat, amenityLon] = amenity.coordinates.split(',').map(parseFloat);
-          
-          map.geoObjects.add(new window.ymaps.Placemark([amenityLat, amenityLon], {
-            balloonContent: `${amenity.title} (${amenity.type})`,
-            hintContent: `${amenity.title} (${amenity.distance.toFixed(2)} км)`,
+          const icon = getAmenityIcon(amenity.category);
+
+          const layout = window.ymaps.templateLayoutFactory.createClass(`
+            <div style="
+              font-size: 18px;
+              width: 36px;
+              height: 36px;
+              background: #fff;
+              border: 2px solid #1e88e5;
+              border-radius: 50%;
+              box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              transition: transform 0.2s;
+              cursor: pointer;
+            ">${icon}</div>
+          `);
+
+          const placemark = new window.ymaps.Placemark([amenityLat, amenityLon], {
+            balloonContent: `
+              <strong>${amenity.title}</strong><br/>
+              Категория: ${getAmenityLabel(amenity.category)}<br/>
+              Расстояние: ${amenity.distance.toFixed(2)} м
+            `,
+            hintContent: `${amenity.title} (${amenity.distance.toFixed(2)} м)`
           }, {
-            preset: iconPresets[amenity.type] || 'islands#blueCircleIcon',
-            iconColor: '#1e98ff' // Единый синий цвет для всех иконок
-          }));
+            iconLayout: 'default#imageWithContent',
+            iconContentLayout: layout,
+            iconOffset: [-18, -18],
+            hintOffset: [0, 20],
+            hasBalloon: true,
+            hasHint: true,
+            hideIconOnBalloonOpen: false,
+            iconShape: {
+              type: 'Circle',
+              coordinates: [18, 18], // Центр иконки (в пикселях от левого верхнего угла layout)
+              radius: 18 // Радиус — такой же как твоя иконка по стилю
+            }
+          });
+
+          map.geoObjects.add(placemark);
         });
       }
-    };
-
-    if (window.ymaps && window.ymaps.Map) {
-      init();
-    } else {
-      const checkYmaps = setInterval(() => {
-        if (window.ymaps && window.ymaps.Map) {
-          clearInterval(checkYmaps);
-          init();
-        }
-      }, 100);
-    }
+    });
   }, [coordinates, amenities]);
 
   return <div ref={mapRef} className="ymap" />;

@@ -5,10 +5,9 @@ import Filters from '../../components/Filters/Filters';
 import { AnnouncementsService } from '../../services/api/announcements';
 import { AuthContext } from '../../components/Authorization/AuthContext'
 import './Home.css';
-import { Link } from 'react-router-dom';
-import { NumericFormat } from 'react-number-format';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import {faHeart} from "@fortawesome/free-solid-svg-icons";
+import AnnouncementCard from '../../components/AnnouncementCard/AnnouncementCard';
+import Pagination from '../../components/Pagination/Pagination';
+import { handleFavoriteClick, isFavorite } from '../../utils/favoritesUtils';
 
 
 class Home extends React.Component {
@@ -27,6 +26,7 @@ class Home extends React.Component {
       itemsPerPage: 21,
       totalItems: 0,
       totalPages: 1,
+      showSaveNotification: false,  
       filters: {
         districts: [],
         rooms: [],
@@ -75,48 +75,42 @@ class Home extends React.Component {
       activeDropdown: null, // Текущее открытое выпадающее меню
       districts: ['Кировский', 'Ленинский', 'Советский', 'Трусовский']
     };
-    this.handleFavoriteClick = this.handleFavoriteClick.bind(this);
   }
 
-  handleFavoriteClick(e, announcement) {
-    e.preventDefault();
-    const { isFavorite, token } = this.context;
+  getAmenityFilters = () => {
+    const amenityKeys = [
+      "stops", "school", "kindergarten", "pickup_point", 
+      "polyclinic", "center", "gym", "mall", "college_and_university",
+      "beauty_salon", "pharmacy", "grocery_store",
+      "religious", "restaurant", "bank"
+    ];
     
-    if (token) {
-      // Для авторизованных пользователей - обычное поведение
-      this.context.toggleFavorite(announcement.announcement_id);
-    } else {
-      // Для гостей - сохраняем полную информацию в localStorage
-      const guestFavorites = JSON.parse(localStorage.getItem('guest_favorites')) || [];
-      const isAlreadyFavorite = guestFavorites.some(fav => fav.id === announcement.announcement_id);
-      
-      if (isAlreadyFavorite) {
-        // Удаляем из избранного
-        const updatedFavorites = guestFavorites.filter(fav => fav.id !== announcement.announcement_id);
-        localStorage.setItem('guest_favorites', JSON.stringify(updatedFavorites));
-      } else {
-        // Добавляем в избранное
-        const newFavorite = {
-          id: announcement.announcement_id,
-          title: announcement.name,
-          price: announcement.price,
-          url: announcement.url || '#',
-          image: announcement.photo || DEFAULT_IMAGE_URL,
-          date: announcement.published_at ? new Date(announcement.published_at) : new Date(),
-          walk_score: announcement.walk_score,
-        };
-        
-        localStorage.setItem('guest_favorites', JSON.stringify([...guestFavorites, newFavorite]));
+    const amenityFilters = {};
+    
+    amenityKeys.forEach(key => {
+      if (this.state.filters[key] !== undefined) {
+        amenityFilters[key] = this.state.filters[key];
       }
-      this.forceUpdate();
-    }
-  }
+    });
+    
+    return amenityFilters;
+  };
 
   handleSaveSearch = async () => {
     const { filters } = this.state;
-    const { saveSearch, token } = this.context;
+    const { saveSearch, token, savedSearches } = this.context;
   
+    // Проверяем активные фильтры (исключая amenity-фильтры)
     const hasActiveFilters = Object.entries(filters).some(([key, value]) => {
+      // Исключаем amenity-фильтры из проверки
+      const amenityKeys = [
+        "stops", "school", "kindergarten", "pickup_point", 
+        "polyclinic", "center", "gym", "mall", "college_and_university",
+        "beauty_salon", "pharmacy", "grocery_store",
+        "religious", "restaurant", "bank"
+      ];
+      
+      if (amenityKeys.includes(key)) return false;
       if (value === null || value === undefined || value === "any") return false;
       if (Array.isArray(value) && value.length === 0) return false;
       if (typeof value === 'object' && Object.keys(value).length === 0) return false;
@@ -124,6 +118,7 @@ class Home extends React.Component {
     });
   
     if (!hasActiveFilters) {
+      alert('Пожалуйста, укажите параметры поиска для сохранения');
       return;
     }
   
@@ -139,7 +134,7 @@ class Home extends React.Component {
       // Добавляем комнаты, если есть
       if (filters.rooms.length > 0) {
         if (searchName.length > 0) searchName += ', ';
-        searchName += filters.rooms.map(r => `${r}к`).join(',');
+        searchName += filters.rooms.map(r => `${r}комн.`).join(',');
       }
       
       // Добавляем цену, если есть
@@ -166,38 +161,22 @@ class Home extends React.Component {
         });
       };
   
-      if (token) {
-        // Для авторизованных пользователей - проверяем в БД
-        const response = await axios.get(`${API_URL}/searches/`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        
-        if (isSearchExists(response.data)) {
-          return;
-        }
-        
-        // Сохраняем в БД
-        await saveSearch(searchName, filters);
-      } else {
-        // Для гостей - проверяем в localStorage
-        const guestSearches = JSON.parse(localStorage.getItem('guest_searches') || '[]');
-        
-        if (isSearchExists(guestSearches)) {
-          return;
-        }
-        
-        // Сохраняем в localStorage
-        const newSearch = {
-          id: Date.now(),
-          name: searchName,
-          params: filters,
-          created_at: new Date().toISOString()
-        };
-        
-        localStorage.setItem('guest_searches', JSON.stringify([newSearch, ...guestSearches]));
+      // Проверяем существование поиска
+      if (isSearchExists(token ? savedSearches : JSON.parse(localStorage.getItem('guest_searches') || '[]'))) {
+        alert('Такой поиск уже сохранен');
+        return;
       }
+  
+      // Сохраняем поиск
+      await saveSearch(searchName, filters);
+      
+      this.setState({ showSaveNotification: true });
+      setTimeout(() => {
+        this.setState({ showSaveNotification: false });
+      }, 2000);
     } catch (error) {
       console.error('Ошибка сохранения поиска:', error);
+      alert('Не удалось сохранить поиск');
     }
   };
 
@@ -377,7 +356,8 @@ class Home extends React.Component {
           grocery_store: "any",
           religious: "any",
           restaurant: "any",
-          bank: "any"
+          bank: "any",
+          custom_address: null
         },                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
       },
       () => {
@@ -394,9 +374,35 @@ class Home extends React.Component {
   // Обработчик изменения сортировки
   handleSortChange = (sortOption) => {
     this.setState({ sortOption, currentPage: 1 }, () => {
-      this.fetchAnnouncements(); 
+      if (sortOption === 'personal_score') {
+        // Сортировка на фронтенде
+        this.sortByPersonalScore();
+      } else {
+        // Остальные сортировки делаются на бэкенде
+        this.fetchAnnouncements();
+      }
       this.scrollToTop();
     });
+  };
+
+  sortByPersonalScore = () => {
+    this.setState(prevState => {
+      // Создаем копию массива объявлений
+      const sortedAnnouncements = [...prevState.announcements]
+        // Фильтруем объявления без оценки (если нужно)
+        .filter(announcement => announcement.personal_score !== undefined)
+        // Сортируем по personal_score (по убыванию)
+        .sort((a, b) => (b.personal_score || 0) - (a.personal_score || 0));
+      
+      return {
+        filteredAnnouncements: sortedAnnouncements,
+        totalPages: Math.ceil(sortedAnnouncements.length / prevState.itemsPerPage)
+      };
+    });
+  };
+
+  hasPersonalScores = () => {
+    return this.state.announcements.some(announcement => announcement.personal_score !== null);
   };
 
   hasActiveAmenityFilters = () => {
@@ -413,6 +419,7 @@ class Home extends React.Component {
 
   // Новый метод для применения фильтров
   handleApplyFilters = (amenitiesFilters = {}) => {
+    console.log('Получены фильтры из модального окна:', amenitiesFilters);
     this.setState(prevState => {
       const newFilters = {
         ...prevState.filters,
@@ -421,7 +428,6 @@ class Home extends React.Component {
       
       // Сохраняем в localStorage только если это не сброс
       localStorage.setItem('announcementFilters', JSON.stringify(newFilters));
-      
       return { filters: newFilters, currentPage: 1 };
     }, () => {
       this.fetchAnnouncements();
@@ -451,7 +457,7 @@ class Home extends React.Component {
         grocery_store: filters.grocery_store,
         religious: filters.religious,
         restaurant: filters.restaurant,
-        bank: filters.bank
+        bank: filters.bank,
       };
         
       const params = {
@@ -461,6 +467,10 @@ class Home extends React.Component {
           ...this.state.filters,
           ...amenityFilters
       };
+
+      if (filters.custom_address) {
+        params.custom_address = filters.custom_address;
+      }
       
       console.log("Отправляемые параметры фильтров:", params);
       const response = await AnnouncementsService.getWithFilters(params);
@@ -491,8 +501,14 @@ class Home extends React.Component {
   // Обработчик изменения страницы
   handlePageChange = (pageNumber) => {
     this.setState({ currentPage: pageNumber }, () => {
-      this.fetchAnnouncements();
-      this.scrollToTop();
+      if (this.state.sortOption === 'personal_score') {
+        // Для персональной сортировки просто обновляем страницу
+        this.scrollToTop();
+      } else {
+        // Для остальных - делаем запрос к серверу
+        this.fetchAnnouncements();
+        this.scrollToTop();
+      }
     });
   };
 
@@ -506,72 +522,18 @@ class Home extends React.Component {
     this.setState({ isModalOpen: false });
   };
 
-  renderPagination = () => {
-    const { currentPage, totalPages } = this.state;
-    const pages = [];
-
-    // Всегда показываем первую страницу
-    if (currentPage > 1) {
-      pages.push(
-        <button key="first" onClick={() => this.handlePageChange(1)}>
-          &laquo;
-        </button>
-      );
-    }
-
-    // Показываем предыдущую страницу
-    if (currentPage > 1) {
-      pages.push(
-        <button key="prev" onClick={() => this.handlePageChange(currentPage - 1)}>
-          &lsaquo;
-        </button>
-      );
-    }
-
-    // Показываем страницы вокруг текущей
-    const startPage = Math.max(1, currentPage - 2);
-    const endPage = Math.min(totalPages, currentPage + 2);
-
-    for (let i = startPage; i <= endPage; i++) {
-      pages.push(
-        <button
-          key={i}
-          onClick={() => this.handlePageChange(i)}
-          className={currentPage === i ? 'active' : ''}
-        >
-          {i}
-        </button>
-      );
-    }
-
-    // Показываем следующую страницу
-    if (currentPage < totalPages) {
-      pages.push(
-        <button key="next" onClick={() => this.handlePageChange(currentPage + 1)}>
-          &rsaquo;
-        </button>
-      );
-    }
-
-    // Всегда показываем последнюю страницу
-    if (currentPage < totalPages) {
-      pages.push(
-        <button key="last" onClick={() => this.handlePageChange(totalPages)}>
-          &raquo;
-        </button>
-      );
-    }
-
-    return <div className="pagination">{pages}</div>;
-  };
 
   render() {
     const { isModalOpen, filteredAnnouncements, loading, error, activeDropdown, districts, sortOption, currentPage, totalPages } = this.state;
-    const { isFavorite } = this.context;
+    const { showSaveNotification } = this.state;
+    const { savedSearches } = this.context;
     
     return (
       <>
         <Header />
+        <div className={`save-notification ${showSaveNotification ? 'show' : ''}`}>
+          Поиск сохранен
+        </div>
         <main className='container-fluid'>
           <div className='search-form'>
             <h1>Недвижимость</h1>
@@ -672,6 +634,9 @@ class Home extends React.Component {
               <option value="price_asc">Дешевле</option>
               <option value="price_desc">Дороже</option>
               <option value="score">По оценке</option>
+              {this.hasPersonalScores() && (
+                <option value="personal_score">По персональной оценке</option>
+              )}
             </select>
           </div>
           <Filters 
@@ -689,80 +654,32 @@ class Home extends React.Component {
               {error && <div className="error-message">{error}</div>}
               <div className="album py-5 bg-light">
                 <div className="row">
-                  {filteredAnnouncements.map(announcement => (
-                    <div className="col-md-4" key={announcement.announcement_id}>
-                      <div className="card mb-4 box-shadow">
-                        <div className="card-img-container">
-                        <Link
-                          to={`/announcement/${announcement.announcement_id}`}
-                          state={{ 
-                            personal_score: announcement.personal_score
-                          }}
-                        >
-                            <img
-                              className="card-img-top"
-                              src={announcement.photo}
-                              alt={announcement.name}
-                              style={{ height: '225px', width: '100%', objectFit: 'cover' }}
-                            />
-                          </Link>
-                          <button 
-                            className="favorite-btn"
-                            onClick={(e) => this.handleFavoriteClick(e, announcement)}
-                          >
-                            <FontAwesomeIcon 
-                              icon={faHeart} 
-                              color={
-                                this.context.token 
-                                  ? this.context.isFavorite(announcement.announcement_id) 
-                                    ? 'red' 
-                                    : 'white'
-                                  : (JSON.parse(localStorage.getItem('guest_favorites')) || [])
-                                    .some(fav => fav.id === announcement.announcement_id)
-                                    ? 'red'
-                                    : 'white'
-                              }
-                            />
-                          </button>
-                        </div>
-                        <div className="card-body">
-                        <Link
-                          to={`/announcement/${announcement.announcement_id}`}
-                          state={{ 
-                            personal_score: announcement.personal_score
-                          }}
-                            className="card-title-link"
-                          >
-                            <h5 className="card-title">{announcement.name}</h5>
-                          </Link>
-                          <p className="card-text">
-                            <strong className="text-primary">
-                              {new Intl.NumberFormat('ru-RU', {
-                                style: 'currency',
-                                currency: 'RUB',
-                                minimumFractionDigits: 0,
-                                maximumFractionDigits: 0
-                              }).format(announcement.price)}
-                            </strong>
-                            <br/>
-                            {announcement.building?.address_text}<br/>
-                            р-н {announcement.building?.district}
-                          </p>
-                          <div className="walk-score">
-                            <span>Оценка: </span>
-                            <strong>{announcement.walk_score || 0}</strong><br />
-                            {announcement.personal_score && (
-                              <span>Персональная оценка: 
-                              <strong>{announcement.personal_score || ''}</strong></span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                  {filteredAnnouncements.map(announcement => {
+                    const isFav = isFavorite(announcement.announcement_id, this.context);
+                    
+                    return (
+                      <AnnouncementCard 
+                        key={announcement.announcement_id}
+                        announcement={{
+                          ...announcement,
+                          filters: this.getAmenityFilters()
+                        }}
+                        onFavoriteClick={(e) => {
+                          const newFavoriteState = handleFavoriteClick(e, announcement, this.context);
+                          // Принудительно обновляем компонент, если нужно
+                          this.forceUpdate();
+                        }}
+                        isFavorite={isFav}
+                      />
+                    );
+                  })}
                 </div>
               </div>
-              {this.renderPagination()}
+              <Pagination 
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={this.handlePageChange}
+              />
             </div>
           </section>
         </main>

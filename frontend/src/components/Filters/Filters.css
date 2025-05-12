@@ -191,3 +191,149 @@ input[type="checkbox"] {
 .input__item input[type="radio"]:checked + span {
     border-color: #007bff; /* Цвет обводки при нажатии */
 }
+
+.slick-slider {
+    padding: 15px 0;
+}
+
+.preset-card {
+    border: 1px solid #ccc;
+    border-radius: 12px;
+    padding: 10px;
+    background-color: #f9f9f9;
+    text-align: center;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.preset-name {
+    font-weight: bold;
+    margin-top: 5px;
+}
+
+.preset-desc {
+    font-size: 12px;
+    color: #666;
+}
+  
+.slick-arrow {
+    font-size: 24px;
+    z-index: 2;
+    background: #333;
+    border-radius: 50%;
+    box-shadow: 0 0 4px rgba(0, 0, 0, 0.2);
+    width: 36px;
+    height: 36px;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.slider-wrapper.grabbing {
+    cursor: grabbing;
+  }
+
+.slick-prev {
+    left: -10px !important;
+}
+
+.slick-next {
+    right: -10px !important;
+}
+
+.slick-arrow:hover {
+    background: #eee;
+}
+
+.slick-prev,
+.slick-next {
+    width: 30px !important;
+    height: 30px !important;
+}
+
+.slick-prev:before,
+.slick-next:before {
+    color: #007bff !important;
+    transition: .2s all;
+}
+
+.preset-card.selected {
+    border: 1px solid #007bff;
+}
+
+.address-suggest {
+    width: 100%;
+    padding: 8px;
+    font-size: 16px;
+}
+
+.suggestions-list {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    max-height: 200px;
+    overflow-y: auto;
+    background-color: white;
+    border: 1px solid #ccc;
+    z-index: 1000;
+    list-style: none;
+    padding: 0;
+    margin: 4px 0 0 0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.suggestions-list li {
+    padding: 10px;
+    cursor: pointer;
+}
+
+.suggestions-list li:hover {
+    background-color: #f0f0f0;
+}
+
+.suggestion-subtitle {
+    font-size: 0.875rem;
+    color: #666;
+    margin-top: 2px;
+}
+
+.apply-button {
+    margin-top: 8px;
+    padding: 6px 12px;
+    background-color: #2196F3;
+    color: #fff;
+    font-weight: 500;
+    border: none;
+    border-radius: 6px;
+    transition: .3s all;
+}
+
+.apply-button:hover {
+    background-color: #0074d3;
+}
+  
+  /* Стили для уведомлений */
+.Toastify__toast {
+  font-family: inherit;
+  border-radius: 8px;
+  padding: 12px 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.Toastify__toast--success {
+  background: #4caf50;
+  color: white;
+}
+
+.Toastify__toast--error {
+  background: #f44336;
+  color: white;
+}
+
+.Toastify__toast--warning {
+  background: #ff9800;
+  color: white;
+}

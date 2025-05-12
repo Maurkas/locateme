@@ -26,5 +26,5 @@ class FavoriteSerializer(serializers.ModelSerializer):
 class SearchQuerySerializer(serializers.ModelSerializer):
     class Meta:
         model = SearchQuery
-        fields = ['id', 'name', 'query_params', 'created_at']
+        fields = ['id', 'name', 'params', 'created_at']
         read_only_fields = ['created_at']

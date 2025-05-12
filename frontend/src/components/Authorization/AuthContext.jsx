@@ -74,7 +74,7 @@ export const AuthProvider = ({ children }) => {
         if (!token) return;
         
         try {
-          const response = await axios.get(`${API_URL}/searches/`, {
+          const response = await axios.get(`${API_URL}/auth/searches/`, {
             headers: { Authorization: `Bearer ${token}` }
           });
           setSavedSearches(response.data);
@@ -118,7 +118,7 @@ export const AuthProvider = ({ children }) => {
         if (token) {
           try {
             const response = await axios.post(
-              `${API_URL}/searches/`,
+              `${API_URL}/auth/searches/`,
               { name, params },
               { headers: { Authorization: `Bearer ${token}` } }
             );
@@ -137,7 +137,7 @@ export const AuthProvider = ({ children }) => {
       const deleteSearch = useCallback(async (searchId) => {
         if (token) {
           try {
-            await axios.delete(`${API_URL}/searches/${searchId}/`, {
+            await axios.delete(`${API_URL}/auth/searches/${searchId}/`, {
               headers: { Authorization: `Bearer ${token}` }
             });
             setSavedSearches(prev => prev.filter(s => s.id !== searchId));

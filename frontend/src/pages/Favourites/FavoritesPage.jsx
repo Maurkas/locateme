@@ -4,13 +4,14 @@ import { NumericFormat } from 'react-number-format';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faHeart, faTrash, faSearch, faFilter } from '@fortawesome/free-solid-svg-icons';
 import './FavoritesPage.css';
+import axios from 'axios';
 import Header from '../../components/Header/Header';
 import Footer from '../../components/Footer/Footer';
 import { AnnouncementsService } from '../../services/api/announcements';
 import { Link, useNavigate } from 'react-router-dom';
 
 const DEFAULT_IMAGE_URL = 'https://sun9-21.userapi.com/impg/dLJL9rctl21QsCZjldHnHQxCnH5RjQtieZ0D0g/fkogJXv_IEQ.jpg?size=1200x800&quality=95&sign=588aa60862d21ec0be777a1db320ce6d&type=album';
-
+const API_URL = 'http://localhost:8000/api';
 const FavoritesPage = () => {
   const { 
     favorites, 
@@ -37,43 +38,45 @@ const FavoritesPage = () => {
   // Загружаем данные объявлений
   useEffect(() => {
     const loadFavorites = async () => {
-      if (activeTab === 'announcements') {
-        setLoading(true);
-        setError(null);
-        
-        try {
-          if (token) {
-            const response = await AnnouncementsService.getAll();
-            if (!response?.results) throw new Error('Некорректные данные');
-            
-            const favoriteAnnouncements = response.results.filter(ann => 
-              favorites.includes(ann.announcement_id)
-            );
-            
-            setAnnouncements(favoriteAnnouncements.map(ann => ({
-              id: ann.announcement_id,
-              title: ann.name,
-              price: ann.price,
-              url: ann.url || '#',
-              image: ann.photo || DEFAULT_IMAGE_URL,
-              date: ann.created_at ? new Date(ann.created_at) : new Date(),
-              walk_score: ann.walk_score,
-            })));
-          } else {
-            setAnnouncements(localFavorites);
-          }
-        } catch (err) {
-          console.error('Ошибка загрузки:', err);
-          setError('Не удалось загрузить избранное');
-          setAnnouncements([]);
-        } finally {
-          setLoading(false);
+        if (activeTab === 'announcements') {
+            setLoading(true);
+            setError(null);
+
+            try {
+                if (token) {
+                    // Загружаем избранные объявления через специальный endpoint
+                    const response = await axios.get(`${API_URL}/auth/favorites/`, {
+                        headers: { Authorization: `Bearer ${token}` }
+                    });
+                    
+                    // Преобразуем данные в нужный формат
+                    const favoriteAnnouncements = response.data.map(item => ({
+                        id: item.announcement.id,
+                        title: item.announcement.name,
+                        price: item.announcement.price,
+                        url: item.announcement.url || '#',
+                        image: item.announcement.photo || DEFAULT_IMAGE_URL,
+                        date: item.announcement.created_at ? new Date(item.announcement.created_at) : new Date(),
+                        walk_score: item.announcement.walk_score,
+                    }));
+
+                    setAnnouncements(favoriteAnnouncements);
+                } else {
+                    // Логика для localStorage
+                    setAnnouncements(localFavorites);
+                }
+            } catch (err) {
+                console.error('Ошибка загрузки:', err);
+                setError('Не удалось загрузить избранное');
+                setAnnouncements([]);
+            } finally {
+                setLoading(false);
+            }
         }
-      }
     };
 
     loadFavorites();
-  }, [favorites, activeTab, token, localFavorites]);
+}, [favorites, activeTab, token, localFavorites]);
 
   // Сортировка объявлений
   const sortedAnnouncements = React.useMemo(() => {
@@ -198,7 +201,7 @@ const FavoritesPage = () => {
                         />
                       </p>
                       <div className="walk-score">
-                        <span>Оценка: </span>
+                        <span>Общая оценка: </span>
                         <strong>{item.walk_score || 0}</strong><br />
                       </div>
                       <div className="announcement-actions">
@@ -238,7 +241,7 @@ const FavoritesPage = () => {
                 {sortedSearches.map((search) => (
                   <div key={search.id} className="search-card">
                     <div className="search-info">
-                      <h4>{search.name}</h4>
+                      <h4>{search.name}, {search.price}</h4>
                       <div className="search-date">
                         {new Date(search.created_at).toLocaleDateString('ru-RU')}
                       </div>
