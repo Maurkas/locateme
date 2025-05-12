@@ -76,9 +76,15 @@ export default function Header() {
                     <Link to="/" className='myLogo'>LocateMe</Link>
                 </div>
                 <div className='header-icons'>
-                    <Link to={'/favourites'}>
-                        <FontAwesomeIcon className='icon-fav' icon={faHeart} size="1x" style={{color: "#616161",}} />
-                    </Link>
+                    {user ? (
+                        <Link to={'/favourites'}>
+                        <FontAwesomeIcon className='icon-fav' icon={faHeart} size="1x" style={{color: "#616161"}} />
+                        </Link>
+                    ) : (
+                        <div onClick={() => setIsAuthModalOpen(true)} style={{cursor: 'pointer'}}>
+                        <FontAwesomeIcon className='icon-fav' icon={faHeart} size="1x" style={{color: "#616161"}} />
+                        </div>
+                    )}
                     {user ? (
                         <div className="user-menu">
                             <span>{user.username}</span>
