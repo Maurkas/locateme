@@ -9,6 +9,7 @@ import { infrastructurePresets } from "./presets";
 import Slider from "react-slick";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { saveFilterStats } from '../../services/api/statsApi';
 
 
 const initialSelectedOptions = {
@@ -327,7 +328,64 @@ const Filters = ({ isOpen, onClose, updateFilter, onApply, onReset }) => {
       setSelectedPreset(presetKey);
     }
   };
-  
+
+  const handleApplyAllFilters = async () => {
+    // Проверяем и применяем адрес, если он был выбран
+    if (addressInput && !selectedSuggestion) {
+      toast.warning("Пожалуйста, выберите адрес из списка или очистите поле адреса");
+      return;
+    }
+
+    // Собираем все фильтры в один объект
+    const allFilters = {
+      ...selectedOptions,
+      districts: selectedDistricts,
+      rooms: selectedRooms,
+      priceMin,
+      priceMax,
+      pricePerMeterMin,
+      pricePerMeterMax,
+      totalAreaMin,
+      totalAreaMax,
+      floorMin,
+      floorMax,
+      notFirstFloor,
+      notLastFloor,
+      bathroomType,
+      kitchenAreaMin,
+      kitchenAreaMax,
+      ceilingHeightMin,
+      ceilingHeightMax,
+      windows,
+      repairType,
+      balcony,
+      yearOfConstructionMin,
+      yearOfConstructionMax,
+      numberOfFloorMin,
+      numberOfFloorMax,
+      houseType,
+      elevator,
+      parking,
+    };
+
+    try {
+      // Отправляем статистику на сервер
+      if (saveFilterStats) {
+        await saveFilterStats('announcements/filters', allFilters);
+      }
+
+      // Обновляем фильтры в родительском компоненте
+      if (onApply) {
+        onApply(allFilters);
+      }
+    } catch (error) {
+      toast.error("Ошибка при применении фильтров", {
+        autoClose: 2000,
+        hideProgressBar: true
+      });
+      console.error("Ошибка:", error);
+    }
+  };
   
 
   if (!isOpen) return null;
@@ -950,7 +1008,7 @@ const Filters = ({ isOpen, onClose, updateFilter, onApply, onReset }) => {
             </div>
           </div>
           <div className="filters-footer">
-            <button onClick={() => onApply(selectedOptions)}>Показать</button>
+            <button onClick={() => handleApplyAllFilters(selectedOptions)}>Показать</button>
             <button onClick={handleResetFilters}>Сбросить фильтры</button>
           </div>
         </div>

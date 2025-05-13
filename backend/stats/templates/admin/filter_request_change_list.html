@@ -1,0 +1,117 @@
+{% extends "admin/change_list.html" %}
+
+{% block extrahead %}
+{{ block.super }}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/themes/base/jquery-ui.min.css">
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+<script>
+$(document).ready(function() {
+    // Модальное окно для выбора дат
+    $("#export-dialog").dialog({
+        autoOpen: false,
+        modal: true,
+        width: 400,
+        buttons: {
+            "Экспортировать": function() {
+                var from = $("#export_from").val();
+                var to = $("#export_to").val();
+                if (from || to) {
+                    var url = "{% url 'export_filters_to_excel' %}?";
+                    if (from) url += "start_date=" + from;
+                    if (to) url += (from ? "&" : "") + "end_date=" + to;
+                    window.location.href = url;
+                }
+                $(this).dialog("close");
+            },
+            "Отмена": function() {
+                $(this).dialog("close");
+            }
+        }
+    });
+
+    // Инициализация календарей в модальном окне
+    $("#export_from, #export_to").datepicker({
+        dateFormat: "yy-mm-dd",
+        changeMonth: true,
+        changeYear: true
+    });
+
+    // Обработчик клика на кнопке экспорта
+    $("#export-btn").click(function(e) {
+        e.preventDefault();
+        $("#export-dialog").dialog("open");
+    });
+
+    // Кнопка для выбора текущего месяца
+    $(".month-picker").click(function() {
+        var date = new Date();
+        var firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
+        var lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+        
+        $("#export_from").datepicker("setDate", firstDay);
+        $("#export_to").datepicker("setDate", lastDay);
+        return false;
+    });
+});
+</script>
+<style>
+.ui-dialog-titlebar-close {
+    display: none;
+}
+.export-dialog-content {
+    padding: 15px;
+}
+.export-dialog-content label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+.export-dialog-content input[type="text"] {
+    width: 120px;
+    padding: 5px;
+    margin-bottom: 10px;
+}
+.month-picker {
+    background: #417690;
+    color: white;
+    padding: 3px 8px;
+    border-radius: 3px;
+    margin-left: 10px;
+    cursor: pointer;
+    font-size: 12px;
+    text-decoration: none;
+    display: inline-block;
+}
+.month-picker:hover {
+    background: #205067;
+}
+</style>
+{% endblock %}
+
+{% block object-tools-items %}
+    {{ block.super }}
+    <li>
+        <a href="#" id="export-btn" class="addlink">
+            Экспорт в XLSX
+        </a>
+    </li>
+{% endblock %}
+
+{% block content %}
+    {{ block.super }}
+
+    <div id="export-dialog" title="Выберите диапазон дат" style="display:none;">
+        <div class="export-dialog-content">
+            <div>
+                <label for="export_from">От:</label>
+                <input type="text" id="export_from" placeholder="ГГГГ-ММ-ДД">
+                <a href="#" class="month-picker">Текущий месяц</a>
+            </div>
+            <div style="margin-top: 15px;">
+                <label for="export_to">До:</label>
+                <input type="text" id="export_to" placeholder="ГГГГ-ММ-ДД">
+            </div>
+        </div>
+    </div>
+{% endblock %}

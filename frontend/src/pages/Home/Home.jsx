@@ -8,6 +8,7 @@ import './Home.css';
 import AnnouncementCard from '../../components/AnnouncementCard/AnnouncementCard';
 import Pagination from '../../components/Pagination/Pagination';
 import { handleFavoriteClick, isFavorite } from '../../utils/favoritesUtils';
+import { NumericFormat } from 'react-number-format';
 
 
 class Home extends React.Component {

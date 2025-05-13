@@ -239,13 +239,6 @@ def calculate_personalized_score_db(
     normalized_score = (total_score / max_possible) * 100 if max_possible > 0 else 0
     personalized_score = max(0, min(100, round(normalized_score)))
 
-    if verbose:
-        print("\n=== DB: Расчёт персональной оценки ===")
-        print(f"Фильтры: {active_filters}")
-        print(f"Оценка за amenities: {sum(category_scores.values())}")
-        print(f"Оценка за custom address: {custom_address_score}")
-        print(f"Сумма: {total_score}/{max_possible} = {personalized_score}")
-
     return personalized_score
 
 def calculate_personal_walk_score(

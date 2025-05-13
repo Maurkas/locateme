@@ -144,6 +144,7 @@ footer {
     font-weight: 500;
     color: #616161;
     border: 1px solid #d7d7d7;
+    cursor: pointer;
 }
 
 .sort-options option {
