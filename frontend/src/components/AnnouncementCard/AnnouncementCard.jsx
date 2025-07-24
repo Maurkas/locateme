@@ -63,8 +63,10 @@ const AnnouncementCard = ({ announcement, onFavoriteClick, isFavorite }) => {
             <span>Общая оценка: </span>
             <strong>{announcement.walk_score || 0}</strong><br />
             {announcement.personal_score && (
-              <span>Персональная оценка: 
-              <strong>{announcement.personal_score}</strong></span>
+              <>
+              <span>Персональная оценка: </span> 
+              <strong>{announcement.personal_score}</strong>
+              </>
             )}
           </div>
         </div>

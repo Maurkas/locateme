@@ -1,6 +1,4 @@
 from django.db import models
-from django.urls import reverse
-from django.utils.html import format_html
 from amenities.models import Amenities
 
 
@@ -12,7 +10,6 @@ class Buildings(models.Model):
     house_type = models.CharField(('Тип дома'), max_length=50, blank=True, null=True)
     year_of_construction = models.CharField(('Год постройки'), max_length=10, blank=True, null=True)
     number_of_floors = models.IntegerField(('Этажей в доме'), default=None)
-    ceiling_height = models.CharField(('Высота потолков'), max_length=10, blank=True, null=True)
     passenger_elevator = models.CharField(('Пассажирский лифт'), max_length=50, blank=True, null=True)
     service_elevator = models.CharField(('Грузовой лифт'), max_length=50, blank=True, null=True)
     courtyard = models.CharField(('Двор'), max_length=1000, blank=True, null=True)

@@ -41,42 +41,11 @@ export default function Footer() {
                 LocateMe
               </h6>
               <p>
-              Подбери недвижимости под свои потребности.
+              Подбери недвижимость под свои потребности.
               </p>
             </MDBCol>
 
-            <MDBCol md='2' lg='2' xl='2' className='mx-auto mb-4'>
-              <h6 className='text-uppercase fw-bold mb-4'>Каталог</h6>
-              <p>
-                <Link to='/keyboards' className='text-reset'>
-                  Клавиатуры
-                </Link>
-              </p>
-              <p>
-                <a href='#!' className='text-reset'>
-                  Аксессуары
-                </a>
-              </p>
-              <p>
-                <a href='#!' className='text-reset'>
-                  Инструменты и детали
-                </a>
-              </p>
-            </MDBCol>
-
-            <MDBCol md='3' lg='2' xl='2' className='mx-auto mb-4'>
-              <h6 className='text-uppercase fw-bold mb-4'>Полезное</h6>
-              <p>
-                <a href='#!' className='text-reset'>
-                  WIKI
-                </a>
-              </p>
-              <p>
-                <a href='#!' className='text-reset'>
-                  О нас
-                </a>
-              </p>
-            </MDBCol>
+            
 
             <MDBCol md='4' lg='3' xl='3' className='mx-auto mb-md-0 mb-4'>
               <h6 className='text-uppercase fw-bold mb-4'>Контакты</h6>

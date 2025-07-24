@@ -14,13 +14,13 @@ from parser_cls import AvitoParse
 
 
 def main(page: ft.Page):
-    page.title = f'Parser Avito'
-    page.theme_mode = ft.ThemeMode.DARK
+    page.title = f'Parser'
+    page.theme_mode = ft.ThemeMode.LIGHT
     page.vertical_alignment = ft.MainAxisAlignment.CENTER
-    page.window.width = 1000
-    page.window.height = 920
-    page.window.min_width = 650
-    page.window.min_height = 920
+    page.window.width = 800
+    page.window.height = 500
+    page.window.min_width = 500
+    page.window.min_height = 400
     page.padding = 20
     config = configparser.ConfigParser()
     current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -77,7 +77,7 @@ def main(page: ft.Page):
         logger.info("Старт")
         stop_event.clear()
         save_config()
-        console_widget.height = 700
+        console_widget.height = 200
         input_fields.visible = False
         start_btn.visible = False
         stop_btn.visible = True
@@ -102,7 +102,7 @@ def main(page: ft.Page):
         stop_event.set()
         logger.debug("Стоп")
         is_run = False
-        console_widget.height = 100
+        console_widget.height = 400
         input_fields.visible = True
         stop_btn.visible = False
         start_btn.visible = True

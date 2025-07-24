@@ -18,7 +18,11 @@ from buildings.models import Buildings, BuildingAmenities
 from amenities.models import Amenities
 
 # Асинхронные обертки для Django ORM
-async_get_buildings = sync_to_async(lambda: list(Buildings.objects.all()))
+async_get_buildings_without_amenities = sync_to_async(
+    lambda: list(Buildings.objects.exclude(
+        pk__in=BuildingAmenities.objects.values_list('building__pk', flat=True)
+    ))
+)
 async_get_amenity_types = sync_to_async(lambda: list(Amenities.objects.values_list('type', flat=True).distinct()))
 async_get_amenities_by_type = sync_to_async(lambda amenity_type: list(Amenities.objects.filter(type=amenity_type)))
 async_update_or_create = sync_to_async(BuildingAmenities.objects.update_or_create)
@@ -130,7 +134,7 @@ class DistanceCalculatorApp:
     
     async def calculate_distances(self):
         try:
-            buildings = await async_get_buildings()
+            buildings = await async_get_buildings_without_amenities()
             amenity_types = await async_get_amenity_types()
             
             total_buildings = len(buildings)

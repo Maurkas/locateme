@@ -6,6 +6,7 @@ import { Helmet, HelmetProvider } from 'react-helmet-async';
 import AnnouncementDetail from './pages/Announcement/AnnouncementDetail';
 import FavoritesPage from './pages/Favourites/FavoritesPage';
 import { AuthProvider } from './components/Authorization/AuthContext';
+import NotFound from './pages/NotFound/NotFound';
 import './index.css'
 
 
@@ -22,6 +23,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/announcement/:id" element={<AnnouncementDetail />} />
           <Route path='/favourites' element={<FavoritesPage/>} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </AuthProvider>
     </HelmetProvider>

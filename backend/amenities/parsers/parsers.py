@@ -8,6 +8,7 @@ from gym_parser import run_gym_parser
 from mosque_religion_parser import run_mosque_religion_parser
 from church_religion_parser import run_church_religion_parser
 from restaurant_parser import run_restaurant_parser
+from school_parser import run_school_parser
 import threading
 import asyncio
 
@@ -47,6 +48,8 @@ def start_parsers():
         selected_parsers.append("Религиозные объекты")
     if restaurant_var.get():
         selected_parsers.append("Рестораны")
+    if school_var.get():
+        selected_parsers.append("Школы")
     if not selected_parsers:
         log("Не выбрано ни одного парсера.")
         return
@@ -76,6 +79,9 @@ def start_parsers():
         elif parser == "Рестораны":
             thread = threading.Thread(target=run_async_parser, args=(run_restaurant_parser, log, lambda: stop_parsing))
             thread.start()
+        elif parser == "Школы":
+            thread = threading.Thread(target=run_async_parser, args=(run_school_parser, log, lambda: stop_parsing))
+            thread.start()
 
 def run_async_parser(parser_func, log, stop_flag):
     """Запускает асинхронный парсер в отдельном потоке."""
@@ -98,17 +104,25 @@ station_var = tk.BooleanVar()
 grocery_store_var = tk.BooleanVar()
 religious_var = tk.BooleanVar()
 restaurant_var = tk.BooleanVar()
+school_var = tk.BooleanVar()
 
 checkbox_frame = tk.Frame(root)
 checkbox_frame.pack(pady=10)
 
-tk.Checkbutton(checkbox_frame, text="Аптеки", variable=pharmacy_var).pack(anchor="w")
-tk.Checkbutton(checkbox_frame, text="Остановки", variable=station_var).pack(anchor="w")
-tk.Checkbutton(checkbox_frame, text="Продукты", variable=grocery_store_var).pack(anchor="w")
-tk.Checkbutton(checkbox_frame, text="Банки", variable=bank_var).pack(anchor="w")
-tk.Checkbutton(checkbox_frame, text="Тренажерные залы", variable=gym_var).pack(anchor="w")
-tk.Checkbutton(checkbox_frame, text="Религиозные объекты", variable=religious_var).pack(anchor="w")
-tk.Checkbutton(checkbox_frame, text="Рестораны", variable=restaurant_var).pack(anchor="w")
+checkboxes = [
+    ("Аптеки", pharmacy_var), ("Остановки", station_var),
+    ("Продукты", grocery_store_var), ("Банкоматы", bank_var),
+    ("Тренажерные залы", gym_var), ("Религиозные объекты", religious_var),
+    ("Рестораны", restaurant_var), ("Салоны красоты", None),
+    ("Школы", school_var), ("Детские сады", None),
+    ("Пункты выдачи", None), ("Поликлиники", None),
+    ("Торговые центры", None), ("ВУЗы и колледжи", None)
+]
+
+for i, (text, var) in enumerate(checkboxes):
+    row = i % 7
+    column = i // 7
+    tk.Checkbutton(checkbox_frame, text=text, variable=var).grid(row=row, column=column, sticky="w")
 
 # Кнопка "Запустить"
 start_button = tk.Button(root, text="Запустить", command=start_parsers)

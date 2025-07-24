@@ -13,7 +13,6 @@ class BuildingSerializer(serializers.ModelSerializer):
             'house_type',
             'year_of_construction',
             'number_of_floors',
-            'ceiling_height',
             'passenger_elevator',
             'service_elevator',
             'courtyard',

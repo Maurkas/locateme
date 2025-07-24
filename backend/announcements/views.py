@@ -187,7 +187,6 @@ class AnnouncementDetailView(View):
                     'house_type': announcement.building.house_type if announcement.building else None,
                     'year_of_construction': announcement.building.year_of_construction if announcement.building else None,
                     'number_of_floors': announcement.building.number_of_floors if announcement.building else None,
-                    'ceiling_height': announcement.building.ceiling_height if announcement.building else None,
                     'passenger_elevator': announcement.building.passenger_elevator if announcement.building else None,
                     'service_elevator': announcement.building.service_elevator if announcement.building else None,
                     'courtyard': announcement.building.courtyard if announcement.building else None,

@@ -486,7 +486,7 @@ class Home extends React.Component {
       });
     } catch (error) {
       this.setState({ 
-        error: 'Не удалось загрузить объявления',
+        error: 'Объявления не найдены',
         loading: false 
       });
     }
@@ -634,7 +634,7 @@ class Home extends React.Component {
               <option value="date">По дате (новые)</option>
               <option value="price_asc">Дешевле</option>
               <option value="price_desc">Дороже</option>
-              <option value="score">По оценке</option>
+              <option value="score">По общей оценке</option>
               {this.hasPersonalScores() && (
                 <option value="personal_score">По персональной оценке</option>
               )}
@@ -653,6 +653,12 @@ class Home extends React.Component {
               <h1>Могут подойти</h1>
               {loading && <div>Загрузка...</div>}
               {error && <div className="error-message">{error}</div>}
+              {!loading && !error && filteredAnnouncements.length === 0 && (
+                <div className="no-results-message">
+                  <h3>Объявления не найдены</h3>
+                  <p>Попробуйте изменить параметры поиска</p>
+                </div>
+              )}
               <div className="album py-5 bg-light">
                 <div className="row">
                   {filteredAnnouncements.map(announcement => {

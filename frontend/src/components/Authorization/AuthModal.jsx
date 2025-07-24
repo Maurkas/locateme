@@ -29,7 +29,7 @@ const AuthModal = ({ open, onClose }) => {
       await login(loginData.username, loginData.password);
       onClose();
     } catch (err) {
-      setError(err.response?.data?.detail || "Неверные учетные данные");
+      //setError(err.response?.data?.detail || "Неверные учетные данные");
     } finally {
       setIsLoading(false);
     }

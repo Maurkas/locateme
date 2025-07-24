@@ -249,7 +249,6 @@ export const AuthProvider = ({ children }) => {
             });
             setUser(userRes.data);
             
-            navigate('/');
             return true;
         } catch (error) {
             console.error('Ошибка регистрации:', error);
@@ -257,7 +256,7 @@ export const AuthProvider = ({ children }) => {
         } finally {
             setIsLoading(false);
         }
-    }, [navigate]);
+    }, []);
     
 
     // При логине переносим избранное из localStorage в БД
@@ -289,16 +288,14 @@ export const AuthProvider = ({ children }) => {
                 await Promise.all(guestSearches.map(search => saveSearch(search.name, search.params).catch(e => console.error(e))));
                 localStorage.removeItem('guest_searches');
             }
-
-            navigate('/');
         } catch (error) {
             console.error('Ошибка входа:', error);
-            logout();
+            logout(false);
             throw error;
         } finally {
             setIsLoading(false);
         }
-    }, [navigate, toggleFavoriteInDB, saveSearch]);
+    }, [toggleFavoriteInDB, saveSearch]);
 
     // При логауте очищаем данные
     const logout = useCallback(() => {
@@ -307,7 +304,7 @@ export const AuthProvider = ({ children }) => {
         setUser(null);
         setFavorites([]);
         setSavedSearches([]);
-        navigate('/');
+        navigate('/favourites');
     }, [navigate]);
 
     const isFavorite = useCallback((announcementId) => {
